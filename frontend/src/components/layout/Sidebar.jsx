@@ -4,41 +4,45 @@ import {
   FaBook,
   FaUsers,
   FaUserGraduate,
+  FaUserCircle,
 } from "react-icons/fa";
 
 function Sidebar() {
   const menuItems = [
     {
       name: "Dashboard",
-      path: "/",
+      path: "/admin/dashboard",
       icon: <FaHome />,
     },
     {
       name: "Courses",
-      path: "/courses",
+      path: "/admin/courses",
       icon: <FaBook />,
     },
     {
       name: "Batches",
-      path: "/batches",
+      path: "/admin/batches",
+      icon: <FaUserGraduate />,
+    },
+    {
+      name: "Users",
+      path: "/admin/users",
       icon: <FaUsers />,
     },
     {
-      name: "Enrollments",
-      path: "/enrollments",
-      icon: <FaUserGraduate />,
+      name: "Profile",
+      path: "/admin/profile",
+      icon: <FaUserCircle />,
     },
   ];
 
   return (
     <div className="w-64 h-screen bg-blue-700 text-white fixed">
-
       <div className="text-2xl font-bold p-6 border-b">
         Thinkz AI LMS
       </div>
 
       <nav className="mt-5">
-
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
@@ -53,9 +57,7 @@ function Sidebar() {
             {item.name}
           </NavLink>
         ))}
-
       </nav>
-
     </div>
   );
 }

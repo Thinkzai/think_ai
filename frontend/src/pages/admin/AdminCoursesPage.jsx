@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import InputField from '../../components/common/InputField';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -26,7 +27,7 @@ export default function AdminCoursesPage() {
   const [selectedCourse, setSelectedCourse] = useState(null);
 
   const dispatch = useDispatch();
-  const courses = useSelector(selectCourses);
+  const courses = useSelector(selectCourses) ?? [];
   const loading = useSelector(selectCoursesLoading);
   const error = useSelector(selectCoursesError);
 
@@ -46,16 +47,28 @@ export default function AdminCoursesPage() {
   };
 
   const handleSaveCourse = async (courseData) => {
-    if (courseData.id) {
-      await dispatch(updateCourse({ id: courseData.id, updates: courseData }));
+    const isEdit = Boolean(courseData.id);
+    const thunk = isEdit
+      ? updateCourse({ id: courseData.id, updates: courseData })
+      : createCourse(courseData);
+
+    const result = await dispatch(thunk);
+
+    if (result.meta.requestStatus === 'fulfilled') {
+      toast.success(isEdit ? 'Course updated successfully' : 'Course created successfully');
+      setIsModalOpen(false);
     } else {
-      await dispatch(createCourse(courseData));
+      toast.error(result.payload || (isEdit ? 'Failed to update course' : 'Failed to create course'));
     }
-    setIsModalOpen(false);
   };
 
-  const handleDeleteCourse = (id) => {
-    dispatch(deleteCourse(id));
+  const handleDeleteCourse = async (id) => {
+    const result = await dispatch(deleteCourse(id));
+    if (result.meta.requestStatus === 'fulfilled') {
+      toast.success('Course deleted');
+    } else {
+      toast.error(result.payload || 'Failed to delete course');
+    }
   };
 
   return (
