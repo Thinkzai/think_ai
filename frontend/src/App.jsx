@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import LoginPage from "./pages/auth/LoginPage";
@@ -8,8 +9,7 @@ import LandingPage from "./pages/public/Landingpage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminRoutes from "./routes/AdminRoutes";
 
-// Your LMS Routes
-import AppRoutes from "./routes/AppRoutes";
+import { fetchCurrentUser } from "./features/auth/authSlice";
 
 function RolePlaceholder({ label }) {
   return (
@@ -20,6 +20,16 @@ function RolePlaceholder({ label }) {
 }
 
 function App() {
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
+  useEffect(() => {
+    if (token && !isAuthenticated) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch, token, isAuthenticated]);
+
   return (
     <Routes>
       {/* Public Routes */}
@@ -37,10 +47,7 @@ function App() {
         path="/admin/*"
         element={
           <ProtectedRoute allowedRoles={["Admin"]}>
-            <>
-              <AdminRoutes />
-              <AppRoutes />
-            </>
+            <AdminRoutes />
           </ProtectedRoute>
         }
       />
@@ -69,7 +76,7 @@ function App() {
       <Route
         path="/ta/*"
         element={
-          <ProtectedRoute allowedRoles={["Ta"]}>
+          <ProtectedRoute allowedRoles={["TA"]}>
             <RolePlaceholder label="TA" />
           </ProtectedRoute>
         }

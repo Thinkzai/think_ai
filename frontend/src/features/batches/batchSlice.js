@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import {
-  getBatchesApi,
-  createBatchApi,
-  updateBatchApi,
-  deleteBatchApi,
-} from './batchService'
+  getBatches,
+  createBatch as createBatchApi,
+  updateBatch as updateBatchApi,
+  deleteBatch as deleteBatchApi,
+} from '../../api/batchApi'
 
 const initialState = {
   items: [],
@@ -14,9 +14,12 @@ const initialState = {
 
 export const fetchBatches = createAsyncThunk(
   'batches/fetchBatches',
-  async (_, { rejectWithValue }) => {
+  async (search = '', { rejectWithValue }) => {
     try {
-      const response = await getBatchesApi()
+      const response = await getBatches(search)
+      // Defensive unwrap: expected shape is { success, message, data }.
+      // Fall back to [] if the API ever returns something else, instead
+      // of letting `undefined` leak into state.
       const payload = response.data?.data
       return Array.isArray(payload) ? payload : []
     } catch (err) {

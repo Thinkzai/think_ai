@@ -131,6 +131,13 @@ export default function LoginPage() {
           </p>
         </div>
 
+        <p className="text-sm text-gray-400 mt-4">
+          Are you an administrator?{' '}
+          <Link to="/login" className="text-[#C77DFF] font-semibold hover:text-[#A435F0] transition-colors">
+            Admin Login
+          </Link>
+        </p>
+
         <p className="text-[11px] lg:text-xs text-center text-gray-500 mt-6 lg:mt-8">
           Encountering anomalies?{' '}
           <a href="#" className="text-gray-300 hover:text-white underline decoration-gray-600 underline-offset-4">

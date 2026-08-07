@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import InputField from '../../components/common/InputField';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -41,16 +42,28 @@ export default function AdminBatchesPage() {
   };
 
   const handleSaveBatch = async (batchData) => {
-    if (batchData.id) {
-      await dispatch(updateBatch({ id: batchData.id, updates: batchData }));
+    const isEdit = Boolean(batchData.id);
+    const thunk = isEdit
+      ? updateBatch({ id: batchData.id, updates: batchData })
+      : createBatch(batchData);
+
+    const result = await dispatch(thunk);
+
+    if (result.meta.requestStatus === 'fulfilled') {
+      toast.success(isEdit ? 'Batch updated successfully' : 'Batch created successfully');
+      setIsModalOpen(false);
     } else {
-      await dispatch(createBatch(batchData));
+      toast.error(result.payload || (isEdit ? 'Failed to update batch' : 'Failed to create batch'));
     }
-    setIsModalOpen(false);
   };
 
-  const handleDeleteBatch = (id) => {
-    dispatch(deleteBatch(id));
+  const handleDeleteBatch = async (id) => {
+    const result = await dispatch(deleteBatch(id));
+    if (result.meta.requestStatus === 'fulfilled') {
+      toast.success('Batch deleted');
+    } else {
+      toast.error(result.payload || 'Failed to delete batch');
+    }
   };
 
   return (
@@ -85,7 +98,7 @@ export default function AdminBatchesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-gray-400 border-b border-gray-700">
+                <tr className="text-left text-gray-500 border-b border-gray-800">
                   <th className="py-3 font-medium">Batch Name</th>
                   <th className="py-3 font-medium">Course ID</th>
                   <th className="py-3 font-medium">Trainer</th>
@@ -131,7 +144,7 @@ export default function AdminBatchesPage() {
                 ))}
                 {filteredBatches.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-gray-500">
+                    <td colSpan={8} className="py-8 text-center text-gray-600">
                       No batches match your search.
                     </td>
                   </tr>

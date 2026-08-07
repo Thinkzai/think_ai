@@ -1,92 +1,92 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { loginApi, registerApi } from './authService'
+import {
+  getUsers,
+  createUser as createUserApi,
+  updateUserRole as updateUserRoleApi,
+} from '../../api/adminUserApi'
 
 const initialState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
+  items: [],
   loading: false,
   error: null,
 }
 
-export const loginUser = createAsyncThunk(
-  'auth/loginUser',
-  async (credentials, { rejectWithValue }) => {
+export const fetchUsers = createAsyncThunk(
+  'adminUsers/fetchUsers',
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await loginApi(credentials)
-      localStorage.setItem('token', response.data.token)
-      return response.data
+      const response = await getUsers()
+      const payload = response.data?.data
+      return Array.isArray(payload) ? payload : []
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Login failed')
+      return rejectWithValue(err.response?.data?.message || 'Failed to load users')
     }
   }
 )
 
-export const registerUser = createAsyncThunk(
-  'auth/registerUser',
-  async (formData, { rejectWithValue }) => {
+export const createUser = createAsyncThunk(
+  'adminUsers/createUser',
+  async (userData, { rejectWithValue }) => {
     try {
-      const response = await registerApi(formData)
-      localStorage.setItem('token', response.data.token)
-      return response.data
+      const response = await createUserApi(userData)
+      return response.data.data
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Registration failed')
+      return rejectWithValue(err.response?.data?.message || 'Failed to create user')
     }
   }
 )
 
-const authSlice = createSlice({
-  name: 'auth',
+export const updateUserRole = createAsyncThunk(
+  'adminUsers/updateUserRole',
+  async ({ userId, role }, { rejectWithValue }) => {
+    try {
+      const response = await updateUserRoleApi(userId, role)
+      return response.data.data
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to update role')
+    }
+  }
+)
+
+const adminUserSlice = createSlice({
+  name: 'adminUsers',
   initialState,
   reducers: {
-    logout: (state) => {
-      state.user = null
-      state.token = null
-      state.isAuthenticated = false
-      localStorage.removeItem('token')
-    },
-    clearAuthError: (state) => {
+    clearAdminUserError: (state) => {
       state.error = null
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending, (state) => {
+      .addCase(fetchUsers.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(loginUser.fulfilled, (state, action) => {
+      .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false
-        state.isAuthenticated = true
-        state.user = action.payload.user
-        state.token = action.payload.token
+        state.items = Array.isArray(action.payload) ? action.payload : []
       })
-      .addCase(loginUser.rejected, (state, action) => {
+      .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true
-        state.error = null
+      .addCase(createUser.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.items.push(action.payload)
+        }
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false
-        state.isAuthenticated = true
-        state.user = action.payload.user
-        state.token = action.payload.token
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
+      .addCase(updateUserRole.fulfilled, (state, action) => {
+        if (!action.payload) return
+        const index = state.items.findIndex((u) => u.id === action.payload.id)
+        if (index !== -1) state.items[index] = action.payload
       })
   },
 })
 
-export const { logout, clearAuthError } = authSlice.actions
+export const { clearAdminUserError } = adminUserSlice.actions
 
-export const selectUser = (state) => state.auth.user
-export const selectIsAuthenticated = (state) => state.auth.isAuthenticated
-export const selectAuthLoading = (state) => state.auth.loading
-export const selectAuthError = (state) => state.auth.error
+export const selectAdminUsers = (state) => state.adminUsers.items
+export const selectAdminUsersLoading = (state) => state.adminUsers.loading
+export const selectAdminUsersError = (state) => state.adminUsers.error
 
-export default authSlice.reducer
+export default adminUserSlice.reducer

@@ -10,13 +10,6 @@ import FeedbackHeader from '../../components/auth/FeedbackHeader';
 import ErrorAlert from '../../components/auth/ErrorAlert';
 import CodeTerminal from '../../components/auth/CodeTerminal';
 
-const REG_HOME = {
-  Learner: '/learner',
-  Instructor: '/instructor',
-  TA: '/ta',
-  Admin: '/admin',
-};
-
 function toSystemError(message) {
   if (!message) return null;
   if (message.toLowerCase().includes('duplicate')) {
@@ -37,9 +30,11 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await dispatch(registerUser({ name, email, password }));
+    const result = await dispatch(
+      registerUser({ name, email, password, role: 'Learner' })
+    );
     if (registerUser.fulfilled.match(result)) {
-      navigate(REG_HOME[result.payload.user.role]);
+      navigate('/learner');
     }
   };
 
@@ -75,6 +70,8 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="John Doe"
+              autoComplete="name"
+              required
             />
             <InputField
               label="Email"
@@ -83,6 +80,8 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@domain.com"
+              autoComplete="username"
+              required
             />
             <InputField
               label="Password"
@@ -91,6 +90,8 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="new-password"
+              required
             />
 
             <div className="flex justify-between items-center text-xs lg:text-sm pt-1 lg:pt-2">
