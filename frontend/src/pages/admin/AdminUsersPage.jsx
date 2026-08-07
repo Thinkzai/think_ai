@@ -13,6 +13,12 @@ import {
   selectAdminUsersLoading,
   selectAdminUsersError,
 } from '../../features/adminUsers/adminUserSlice';
+import { 
+  getUsersApi, 
+  toggleUserStatusApi, 
+  triggerPasswordResetApi, 
+  bulkAssignRolesApi 
+} from '../../features/adminUsers/adminUserService';
 
 const ROLE_STYLES = {
   Learner: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
@@ -31,8 +37,14 @@ export default function AdminUsersPage() {
   const users = useSelector(selectAdminUsers) ?? [];
   const loading = useSelector(selectAdminUsersLoading);
   const error = useSelector(selectAdminUsersError);
-  const canManageUsers = usePermission('USER_MANAGEMENT');
 
+  // State for bulk selection and role assignment
+const [selectedUserIds, setSelectedUserIds] = useState([]);
+const [selectedRole, setSelectedRole] = useState('');
+
+// RBAC permission check using your imported hook
+const { hasPermission } = usePermission();
+const canManageUsers = hasPermission('manage_users') || hasPermission('admin');
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
@@ -58,6 +70,46 @@ export default function AdminUsersPage() {
     }
     setIsModalOpen(false);
   };
+
+  // Toggle User Status handler
+const handleStatusToggle = async (userId, currentStatus) => {
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  try {
+    await toggleUserStatusApi(userId, newStatus);
+    dispatch(fetchUsers()); // Re-fetch or update local state
+  } catch (err) {
+    console.error('Error toggling status:', err);
+  }
+};
+
+// Password Reset Handler
+const handlePasswordReset = async (userId) => {
+  try {
+    await triggerPasswordResetApi(userId);
+    alert('Password reset email sent successfully.');
+  } catch (err) {
+    console.error('Error resetting password:', err);
+  }
+};
+
+// Bulk Role Assignment Handler
+const handleBulkRoleAssign = async () => {
+  if (!selectedUserIds.length || !selectedRole) return;
+  try {
+    await bulkAssignRolesApi(selectedUserIds, selectedRole);
+    setSelectedUserIds([]);
+    dispatch(fetchUsers());
+  } catch (err) {
+    console.error('Error with bulk role assignment:', err);
+  }
+};
+
+// Checkbox Selection Toggle Handler
+const toggleUserSelection = (userId) => {
+  setSelectedUserIds((prev) =>
+    prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+  );
+};
 
   return (
     <div className="space-y-6">
@@ -110,43 +162,98 @@ export default function AdminUsersPage() {
         )}
 
         {!loading && !error && (
-          <div className="overflow-x-auto">
+         <>
+            {canManageUsers && selectedUserIds.length > 0 && (
+  <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg mb-4">
+    <span className="text-sm text-gray-300">
+      {selectedUserIds.length} user(s) selected
+    </span>
+    <select
+      value={selectedRole}
+      onChange={(e) => setSelectedRole(e.target.value)}
+      className="bg-slate-700 text-white text-sm p-2 rounded border border-slate-600"
+    >
+      <option value="">Select Target Role</option>
+      <option value="Admin">Admin</option>
+      <option value="Instructor">Instructor</option>
+      <option value="TA">TA</option>
+      <option value="Learner">Learner</option>
+    </select>
+    <Button onClick={handleBulkRoleAssign}>Apply Bulk Role</Button>
+  </div>
+     
+     )}
+<div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-400 border-b border-gray-700">
-                  <th className="py-3 font-medium">Name</th>
-                  <th className="py-3 font-medium">Email</th>
-                  <th className="py-3 font-medium">Role</th>
-                  <th className="py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-900 hover:bg-gray-900/40">
-                    <td className="py-3 text-gray-200">{u.name}</td>
-                    <td className="py-3 text-gray-400">{u.email}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs border ${ROLE_STYLES[u.role]}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      {canManageUsers ? (
-                        <button
-                          onClick={() => handleOpenModal(u)}
-                          className="text-gray-400 hover:text-cyan-400 text-xs transition-colors"
-                        >
-                          Change Role
-                        </button>
-                      ) : (
-                        <span className="text-gray-700 text-xs">View only</span>
-                      )}
-                    </td>
+                 <thead>
+  <tr className="border-b border-slate-700 text-left text-xs text-slate-400">
+    {/* FIRST TH IN THE TR */}
+    <th className="p-3">
+      <input
+        type="checkbox"
+        onChange={(e) => {
+          if (e.target.checked) {
+            setSelectedUserIds(filteredUsers.map((u) => u.id));
+          } else {
+            setSelectedUserIds([]);
+          }
+        }}
+        checked={filteredUsers?.length > 0 && selectedUserIds.length === filteredUsers.length}
+      />
+    </th>
+    <th className="p-3">User</th>
+    <th className="p-3">Role</th>
+    <th className="p-3">Status</th>
+    <th className="p-3">Actions</th>
+  </tr>
+</thead>
+                  
+             <tbody>
+  {users.map((user) => (
+    <tr key={user.id} className="border-b border-slate-800 hover:bg-slate-800/50">
+      {/* FIRST TD IN THE ROW */}
+      <td className="p-3">
+        <input
+          type="checkbox"
+          checked={selectedUserIds.includes(user.id)}
+          onChange={() => toggleUserSelection(user.id)}
+        />
+      </td>
+      <td className="p-3">{user.name}</td>
+    
+                    <td className="p-3 text-right">
+  {canManageUsers ? (
+    <div className="flex items-center justify-end gap-2">
+      <button
+        onClick={() => handleStatusToggle(user.id, user.status)}
+        className="text-xs px-2 py-1 rounded bg-slate-800 text-cyan-400 hover:bg-slate-700"
+      >
+        Toggle ({user.status || 'active'})
+      </button>
+
+      <button
+        onClick={() => handlePasswordReset(user.id)}
+        className="text-xs px-2 py-1 rounded bg-slate-800 text-amber-400 hover:bg-slate-700"
+      >
+        Reset Password
+      </button>
+
+      <button
+        onClick={() => handleOpenModal(user)}
+        className="text-xs px-2 py-1 rounded bg-slate-800 text-gray-400 hover:text-cyan-400"
+      >
+        Edit
+      </button>
+    </div>
+  ) : (
+    <span className="text-xs text-slate-500">View Only</span>
+  )}
+</td>
                   </tr>
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-gray-500">
+                    <td colSpan={5} className="py-8 text-center text-gray-400">
                       No users match your search.
                     </td>
                   </tr>
@@ -154,6 +261,7 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
