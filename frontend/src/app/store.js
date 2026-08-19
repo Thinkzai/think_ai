@@ -3,6 +3,7 @@ import authReducer from '../features/auth/authSlice'
 import courseReducer from '../features/courses/courseSlice'
 import batchReducer from '../features/batches/batchSlice'
 import adminUserReducer from '../features/adminUsers/adminUserSlice'
+import liveSessionReducer from '../features/liveSession/liveSessionSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     courses: courseReducer,
     batches: batchReducer,
     adminUsers: adminUserReducer,
+    liveSession: liveSessionReducer,
   },
 })

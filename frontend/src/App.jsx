@@ -7,6 +7,7 @@ import LandingPage from "./pages/public/Landingpage";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AppRoutes from "./routes/AppRoutes";
+import LiveClassStudioPage from "./pages/LiveClassStudioPage";
 
 function RolePlaceholder({ label }) {
   return (
@@ -25,50 +26,31 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      <Route
-        path="/org-login"
-        element={<RolePlaceholder label="Organization Login" />}
-      />
+      <Route path="/org-login" element={<RolePlaceholder label="Organization Login" />} />
+
+      {/* Live Class Studio — accessible directly */}
+      <Route path="/studio/:sessionId" element={<LiveClassStudioPage />} />
+      <Route path="/studio" element={<LiveClassStudioPage />} />
 
       {/* Admin */}
-      <Route
-        path="/admin/*"
-        element={
-          <ProtectedRoute allowedRoles={["Admin"]}>
-            <AppRoutes />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/admin/*" element={
+        <ProtectedRoute allowedRoles={["Admin"]}><AppRoutes /></ProtectedRoute>
+      } />
 
       {/* Learner */}
-      <Route
-        path="/learner/*"
-        element={
-          <ProtectedRoute allowedRoles={["Learner"]}>
-            <RolePlaceholder label="Learner" />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/learner/*" element={
+        <ProtectedRoute allowedRoles={["Learner"]}><RolePlaceholder label="Learner" /></ProtectedRoute>
+      } />
 
       {/* Instructor */}
-      <Route
-        path="/instructor/*"
-        element={
-          <ProtectedRoute allowedRoles={["Instructor"]}>
-            <RolePlaceholder label="Instructor" />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/instructor/*" element={
+        <ProtectedRoute allowedRoles={["Instructor"]}><RolePlaceholder label="Instructor" /></ProtectedRoute>
+      } />
 
       {/* TA */}
-      <Route
-        path="/ta/*"
-        element={
-          <ProtectedRoute allowedRoles={["TA"]}>
-            <RolePlaceholder label="TA" />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/ta/*" element={
+        <ProtectedRoute allowedRoles={["TA"]}><RolePlaceholder label="TA" /></ProtectedRoute>
+      } />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/login" replace />} />
