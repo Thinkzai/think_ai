@@ -8,14 +8,9 @@ export const getRolesApi = () => {
   return adminApiClient.get('/admin/roles')
 }
 
-export const createUserApi = (userData) => {
-  return adminApiClient.post('/admin/users', userData)
-}
-
 export const updateUserRoleApi = (userId, role) => {
   return adminApiClient.put(`/admin/users/${userId}/role`, { role })
 }
-
 // --- ADDED THESE NEW SERVICE FUNCTIONS ---
 
 // Toggle User Status

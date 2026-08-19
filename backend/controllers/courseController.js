@@ -2,6 +2,7 @@ const service = require("../services/courseService");
 
 const getCourses = async (req, res) => {
     try {
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
         const search = req.query.search || "";
@@ -18,24 +19,28 @@ const getCourses = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
             message: error.message
         });
+
     }
 };
 
 const getCourseById = async (req, res) => {
+
     try {
-        const course = await service.getCourseById(
-            req.params.id
-        );
+
+        const course = await service.getCourseById(req.params.id);
 
         if (!course) {
+
             return res.status(404).json({
                 success: false,
                 message: "Course not found"
             });
+
         }
 
         res.status(200).json({
@@ -44,15 +49,20 @@ const getCourseById = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
             message: error.message
         });
+
     }
+
 };
 
 const createCourse = async (req, res) => {
+
     try {
+
         const course = await service.createCourse(req.body);
 
         res.status(201).json({
@@ -61,15 +71,20 @@ const createCourse = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
             message: error.message
         });
+
     }
+
 };
 
 const updateCourse = async (req, res) => {
+
     try {
+
         const course = await service.updateCourse(
             req.params.id,
             req.body
@@ -81,15 +96,20 @@ const updateCourse = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
             message: error.message
         });
+
     }
+
 };
 
 const deleteCourse = async (req, res) => {
+
     try {
+
         await service.deleteCourse(req.params.id);
 
         res.status(200).json({
@@ -98,18 +118,20 @@ const deleteCourse = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
             message: error.message
         });
+
     }
+
 };
 
 const getCourseBatches = async (req, res) => {
     try {
-        const batches = await service.getCourseBatches(
-            req.params.courseId
-        );
+
+        const batches = await service.getCourseBatches(req.params.courseId);
 
         res.status(200).json({
             success: true,
@@ -117,39 +139,12 @@ const getCourseBatches = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-/* Get course content */
-const getCourseContent = async (req, res) => {
-    try {
-        const course = await service.getCourseContent(
-            req.params.courseId
-        );
-
-        if (!course) {
-            return res.status(404).json({
-                success: false,
-                message: "Course not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: course
-        });
-
-    } catch (error) {
-        console.error("Get course content error:", error);
 
         res.status(500).json({
             success: false,
             message: error.message
         });
+
     }
 };
 
@@ -159,6 +154,5 @@ module.exports = {
     createCourse,
     updateCourse,
     deleteCourse,
-    getCourseBatches,
-    getCourseContent
+    getCourseBatches
 };

@@ -34,7 +34,7 @@ export default function FeedbackHeader({
     : currentStyle.title;
 
   return (
-    <div className={`mb-2 lg:mb-2 text-${align} w-full`}>
+    <div className={`mb-6 lg:mb-8 text-${align} w-full`}>
       
       <h1 className={`${titleClassBase} text-2xl lg:text-3xl font-semibold mb-2 tracking-tight`}>
         {title}

@@ -1,22 +1,15 @@
 const prisma = require("../config/database");
 const repository = require("../repositories/enrollmentRepository");
 
-
 const getAllEnrollments = async () => {
     return await repository.getAllEnrollments();
 };
 
-
 const getEnrollmentById = async (id) => {
-    return await repository.getEnrollmentById(
-        Number(id)
-    );
+    return await repository.getEnrollmentById(Number(id));
 };
 
 
-/*
- * Create enrollment
- */
 const createEnrollment = async (data) => {
 
     const batchId = Number(data.batchId);
@@ -26,57 +19,24 @@ const createEnrollment = async (data) => {
         throw new Error("Batch is required");
     }
 
-
-    // Get selected batch, course and active enrollments
-    const selectedBatch =
-        await prisma.batch.findUnique({
-            where: {
-                id: batchId
-            },
-
-            include: {
-                course: true,
-
-                enrollments: {
-                    where: {
-                        enrollmentStatus: {
-                            in: [
-                                "ACTIVE",
-                                "ENROLLED"
-                            ]
-                        }
+    // Get selected batch and its current enrollments
+    const selectedBatch = await prisma.batch.findUnique({
+        where: {
+            id: batchId
+        },
+        include: {
+            enrollments: {
+                where: {
+                    enrollmentStatus: {
+                        in: ["ACTIVE", "ENROLLED"]
                     }
                 }
             }
-        });
-
+        }
+    });
 
     if (!selectedBatch) {
-        throw new Error(
-            "Selected batch not found"
-        );
-    }
-
-
-    // Do not allow enrollment into an archived course
-    if (
-        selectedBatch.course?.status !==
-        "ACTIVE"
-    ) {
-        throw new Error(
-            "Cannot enroll into an archived course"
-        );
-    }
-
-
-    // Do not allow enrollment into an inactive batch
-    if (
-        selectedBatch.status !==
-        "ACTIVE"
-    ) {
-        throw new Error(
-            "Cannot enroll into an inactive batch"
-        );
+        throw new Error("Selected batch not found");
     }
 
 
@@ -86,22 +46,18 @@ const createEnrollment = async (data) => {
         selectedBatch.capacity;
 
 
-    // Selected batch has available capacity
-    if (!selectedBatchFull) {
+    // Selected batch has space
+    if (
+        selectedBatch.status === "ACTIVE" &&
+        !selectedBatchFull
+    ) {
 
         return await repository.createEnrollment({
-            studentName:
-                data.studentName,
-
-            studentEmail:
-                data.studentEmail,
-
-            batchId:
-                selectedBatch.id,
-
+            studentName: data.studentName,
+            studentEmail: data.studentEmail,
+            batchId: selectedBatch.id,
             enrollmentStatus:
-                data.enrollmentStatus ||
-                "ENROLLED"
+                data.enrollmentStatus || "ENROLLED"
         });
     }
 
@@ -123,30 +79,16 @@ const createEnrollment = async (data) => {
 
     // Automatically assign alternative batch
     return await repository.createEnrollment({
-        studentName:
-            data.studentName,
-
-        studentEmail:
-            data.studentEmail,
-
-        batchId:
-            alternativeBatch.id,
-
+        studentName: data.studentName,
+        studentEmail: data.studentEmail,
+        batchId: alternativeBatch.id,
         enrollmentStatus:
-            data.enrollmentStatus ||
-            "ENROLLED"
+            data.enrollmentStatus || "ENROLLED"
     });
 };
 
 
-/*
- * Update enrollment
- */
-const updateEnrollment = async (
-    id,
-    data
-) => {
-
+const updateEnrollment = async (id, data) => {
     return await repository.updateEnrollment(
         Number(id),
         data
@@ -154,47 +96,7 @@ const updateEnrollment = async (
 };
 
 
-/*
- * Unlock course access
- *
- * This function is intended to be called
- * after the payment module verifies payment.
- */
-const unlockCourseAccess = async (
-    id
-) => {
-
-    const enrollment =
-        await repository.getEnrollmentById(
-            Number(id)
-        );
-
-
-    if (!enrollment) {
-        throw new Error(
-            "Enrollment not found"
-        );
-    }
-
-
-    // Already unlocked
-    if (enrollment.courseAccess) {
-
-        return enrollment;
-    }
-
-
-    return await repository.unlockCourseAccess(
-        Number(id)
-    );
-};
-
-
-/*
- * Delete enrollment
- */
 const deleteEnrollment = async (id) => {
-
     return await repository.deleteEnrollment(
         Number(id)
     );
@@ -206,6 +108,5 @@ module.exports = {
     getEnrollmentById,
     createEnrollment,
     updateEnrollment,
-    unlockCourseAccess,
     deleteEnrollment
 };

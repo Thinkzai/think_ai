@@ -3,11 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getBatchById, updateBatch } from "../../api/batchApi";
 import { getCourses } from "../../api/courseApi";
-import InputField from "../../components/common/InputField";
 
 function EditBatch() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [courses, setCourses] = useState([]);
 
   const [batch, setBatch] = useState({
@@ -23,7 +23,7 @@ function EditBatch() {
   useEffect(() => {
     loadCourses();
     loadBatch();
-  }, [id]);
+  }, []);
 
   const loadCourses = async () => {
     try {
@@ -38,6 +38,7 @@ function EditBatch() {
   const loadBatch = async () => {
     try {
       const response = await getBatchById(id);
+
       const data = response.data.data;
 
       setBatch({
@@ -45,8 +46,8 @@ function EditBatch() {
         courseId: data.courseId,
         instructorName: data.instructorName,
         capacity: data.capacity,
-        startDate: data.startDate ? data.startDate.split("T")[0] : "",
-        endDate: data.endDate ? data.endDate.split("T")[0] : "",
+        startDate: data.startDate.split("T")[0],
+        endDate: data.endDate.split("T")[0],
         status: data.status,
       });
     } catch (error) {
@@ -57,14 +58,19 @@ function EditBatch() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setBatch({
       ...batch,
-      [name]: name === "courseId" || name === "capacity" ? Number(value) : value,
+      [name]:
+        name === "courseId" || name === "capacity"
+          ? Number(value)
+          : value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const payload = {
         name: batch.name,
@@ -77,128 +83,134 @@ function EditBatch() {
       };
 
       await updateBatch(id, payload);
-      toast.success("Batch Updated Successfully", { theme: "dark" });
+
+      toast.success("Batch Updated Successfully");
+
       navigate("/admin/batches");
     } catch (error) {
       console.error(error);
-      toast.error("Update Failed", { theme: "dark" });
+
+      if (error.response) {
+        console.log(error.response.data);
+      }
+
+      toast.error("Update Failed");
     }
   };
 
   return (
-    <div className="relative flex flex-col h-full space-y-4 sm:space-y-6 -mt-2 overflow-hidden pb-2">
-      {/* Header */}
-      <div className="flex items-center justify-between shrink-0 max-w-3xl mx-auto w-full">
+    <div className="max-w-5xl mx-auto">
+
+      <div className="flex justify-between items-center mb-8">
+
         <div>
-          <h1 className="text-2xl font-semibold text-white">Edit Batch</h1>
-          <p className="text-sm text-gray-400 mt-1">Update batch information and schedule.</p>
+          <h1 className="text-3xl font-bold text-white">
+            Edit Batch
+          </h1>
+
+          <p className="text-gray-400 mt-1">
+            Update batch information.
+          </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => navigate("/admin/batches")}
+          className="px-5 py-3 rounded-xl bg-[#1A1F2B] border border-gray-700 text-cyan-400 hover:bg-[#22283A] transition"
+        >
+          ← Back
+        </button>
+
       </div>
 
-      {/* Form Card */}
-      <div className="flex-1 overflow-auto glass-panel rounded-2xl p-6 sm:p-8 bg-[#1A1F2B] border border-gray-800 custom-scrollbar max-w-3xl mx-auto w-full">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Batch Name</label>
-            <InputField
-              type="text"
-              name="name"
-              value={batch.name}
-              onChange={handleChange}
-              placeholder="Enter batch name"
-              required
-            />
-          </div>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-[#1A1F2B] border border-gray-800 rounded-2xl p-8 grid grid-cols-2 gap-6"
+      >
 
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Course</label>
-            <select
-              name="courseId"
-              value={batch.courseId}
-              onChange={handleChange}
-              className="bg-[#0B0F19] border border-gray-700/80 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all"
-              required
-            >
-              <option value="">Select Course</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.title}
-                </option>
-              ))}
-            </select>
-          </div>
+        <input
+          type="text"
+          name="name"
+          placeholder="Batch Name"
+          value={batch.name}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Instructor Name</label>
-            <InputField
-              type="text"
-              name="instructorName"
-              value={batch.instructorName}
-              onChange={handleChange}
-              placeholder="Enter instructor name"
-              required
-            />
-          </div>
+        <select
+          name="courseId"
+          value={batch.courseId}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500"
+          required
+        >
+          <option value="">Select Course</option>
 
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Capacity</label>
-            <InputField
-              type="number"
-              name="capacity"
-              value={batch.capacity}
-              onChange={handleChange}
-              placeholder="Enter capacity"
-              required
-            />
-          </div>
+          {courses.map((course) => (
+            <option key={course.id} value={course.id}>
+              {course.title}
+            </option>
+          ))}
+        </select>
 
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Start Date</label>
-            <input
-              type="date"
-              name="startDate"
-              value={batch.startDate}
-              onChange={handleChange}
-              className="bg-[#0B0F19] border border-gray-700/80 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all"
-              required
-            />
-          </div>
+        <input
+          type="text"
+          name="instructorName"
+          placeholder="Instructor Name"
+          value={batch.instructorName}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">End Date</label>
-            <input
-              type="date"
-              name="endDate"
-              value={batch.endDate}
-              onChange={handleChange}
-              className="bg-[#0B0F19] border border-gray-700/80 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all"
-              required
-            />
-          </div>
+        <input
+          type="number"
+          name="capacity"
+          placeholder="Capacity"
+          value={batch.capacity}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-          <div className="col-span-1 sm:col-span-2 flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</label>
-            <select
-              name="status"
-              value={batch.status}
-              onChange={handleChange}
-              className="bg-[#0B0F19] border border-gray-700/80 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all"
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </select>
-          </div>
+        <input
+          type="date"
+          name="startDate"
+          value={batch.startDate}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-          <div className="col-span-1 sm:col-span-2 pt-4">
-            <button
-              type="submit"
-              className="w-full py-3.5 text-sm font-bold bg-gradient-to-r from-indigo-500 to-cyan-400 hover:from-indigo-400 hover:to-cyan-300 text-white border-0 rounded-xl transition-all duration-300 shadow-lg hover:shadow-cyan-500/50 uppercase tracking-wider"
-            >
-              Update Batch
-            </button>
-          </div>
-        </form>
-      </div>
+        <input
+          type="date"
+          name="endDate"
+          value={batch.endDate}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500"
+          required
+        />
+
+        <select
+          name="status"
+          value={batch.status}
+          onChange={handleChange}
+          className="col-span-2 bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500"
+        >
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+        </select>
+
+        <button
+          type="submit"
+          className="col-span-2 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold py-3 rounded-xl transition"
+        >
+          Update Batch
+        </button>
+
+      </form>
+
     </div>
   );
 }

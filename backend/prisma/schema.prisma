@@ -8,31 +8,28 @@ datasource db {
 }
 
 model Course {
-  id                Int     @id @default(autoincrement())
-  title             String
-  description       String
-  category          String
-  price             Float
-  duration          String
-  thumbnail         String?
-  videoUrl          String?
-  instructorName    String?
-  instructorDetails String?
-  status            String  @default("ACTIVE")
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  category    String
+  price       Float
+  duration    String
+  thumbnail   String?
+  status      String   @default("ACTIVE")
 
-  batches Batch[]
-  modules Module[]
+  batches     Batch[]
+  modules     Module[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Batch {
-  id   Int    @id @default(autoincrement())
-  name String
+  id             Int      @id @default(autoincrement())
+  name           String
 
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id])
+  courseId       Int
+  course         Course   @relation(fields: [courseId], references: [id])
 
   instructorName String
   capacity       Int
@@ -40,10 +37,10 @@ model Batch {
   endDate        DateTime
   status         String   @default("ACTIVE")
 
-  enrollments Enrollment[]
+  enrollments    Enrollment[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Enrollment {
@@ -53,191 +50,56 @@ model Enrollment {
   batchId          Int
   batch            Batch    @relation(fields: [batchId], references: [id])
   enrollmentStatus String   @default("ENROLLED")
-  courseAccess     Boolean  @default(false)
   enrolledAt       DateTime @default(now())
 
-  lessonProgress        LessonProgress[]
-  assessmentSubmissions AssessmentSubmission[]
-  certificate           Certificate?
-}
-
-model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?
-  action     String
-  targetType String?
-  targetId   String?
-  metadata   Json?
-  createdAt  DateTime @default(now())
+  lessonProgress   LessonProgress[]
 }
 
 model Module {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
   description String?
 
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId    Int
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   lessons     Lesson[]
-  assessments Assessment[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Lesson {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
   description String?
   content     String?
-  videoUrl    String?
   duration    String?
-  order       Int     @default(0)
+  order       Int      @default(0)
 
-  moduleId Int
-  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId    Int
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
-  progress LessonProgress[]
+  progress    LessonProgress[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model LessonProgress {
-  id Int @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
 
-  enrollmentId Int
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  enrollmentId  Int
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
-  lessonId Int
-  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lessonId      Int
+  lesson        Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
-  completed   Boolean   @default(false)
-  completedAt DateTime?
+  completed     Boolean  @default(false)
+  completedAt   DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([enrollmentId, lessonId])
-}
-
-model Certificate {
-  id            Int    @id @default(autoincrement())
-  certificateNo String @unique
-
-  enrollmentId Int        @unique
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-
-  studentName          String
-  courseName           String
-  instructorName       String?
-  completionPercentage Float
-
-  issuedAt DateTime @default(now())
-
-  pdfUrl          String?
-  verificationUrl String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Assessment {
-  id          Int     @id @default(autoincrement())
-  title       String
-  description String?
-  totalMarks  Int
-  duration    Int?
-  status      String  @default("ACTIVE")
-
-  moduleId Int
-  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-
-  questions   Question[]
-  submissions AssessmentSubmission[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Question {
-  id           Int    @id @default(autoincrement())
-  questionText String
-  questionType String @default("MCQ")
-  marks        Int    @default(1)
-  order        Int    @default(0)
-
-  assessmentId Int
-  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-
-  options           Option[]
-  submissionAnswers SubmissionAnswer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Option {
-  id         Int     @id @default(autoincrement())
-  optionText String
-  isCorrect  Boolean @default(false)
-
-  questionId Int
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-}
-
-model AssessmentSubmission {
-  id Int @id @default(autoincrement())
-
-  assessmentId Int
-  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-
-  enrollmentId Int
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-
-  judge0Token String? @unique
-
-  judge0Status  String?
-  stdout        String?
-  stderr        String?
-  compileOutput String?
-  executionTime String?
-  memory        Int?
-
-  score      Float?
-  totalMarks Int
-  percentage Float?
-  status     String @default("SUBMITTED")
-
-  submittedAt DateTime @default(now())
-
-  answers SubmissionAnswer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model SubmissionAnswer {
-  id Int @id @default(autoincrement())
-
-  submissionId Int
-  submission   AssessmentSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
-  questionId Int
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  selectedOptionId Int?
-  answerText       String?
-  code             String?
-
-  isCorrect     Boolean?
-  marksObtained Float?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([submissionId, questionId])
 }

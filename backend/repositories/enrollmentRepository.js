@@ -1,6 +1,5 @@
 const prisma = require("../config/database");
 
-
 const getAllEnrollments = async () => {
     return await prisma.enrollment.findMany({
         include: {
@@ -87,33 +86,6 @@ const updateEnrollment = async (id, data) => {
 };
 
 
-/*
- * Unlock course access
- *
- * Called after payment verification.
- */
-const unlockCourseAccess = async (id) => {
-
-    return await prisma.enrollment.update({
-        where: {
-            id: Number(id)
-        },
-
-        data: {
-            courseAccess: true
-        },
-
-        include: {
-            batch: {
-                include: {
-                    course: true
-                }
-            }
-        }
-    });
-};
-
-
 const deleteEnrollment = async (id) => {
     return await prisma.enrollment.delete({
         where: { id }
@@ -127,6 +99,5 @@ module.exports = {
     findAvailableBatch,
     createEnrollment,
     updateEnrollment,
-    deleteEnrollment,
-    unlockCourseAccess
+    deleteEnrollment
 };

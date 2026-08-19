@@ -7,16 +7,8 @@ const {
     getEnrollmentById,
     createEnrollment,
     updateEnrollment,
-    unlockCourseAccess,
     deleteEnrollment
 } = require("../controllers/enrollmentController");
-
-const {
-    validateEnrollmentCreate,
-    validateEnrollmentUpdate,
-    validateEnrollmentId
-} = require("../validations/enrollmentValidation");
-
 
 /**
  * @swagger
@@ -24,7 +16,6 @@ const {
  *   name: Enrollments
  *   description: Enrollment Management APIs
  */
-
 
 /**
  * @swagger
@@ -36,11 +27,7 @@ const {
  *       200:
  *         description: List of enrollments
  */
-router.get(
-    "/",
-    getEnrollments
-);
-
+router.get("/", getEnrollments);
 
 /**
  * @swagger
@@ -58,17 +45,10 @@ router.get(
  *     responses:
  *       200:
  *         description: Enrollment details
- *       400:
- *         description: Invalid enrollment ID
  *       404:
  *         description: Enrollment not found
  */
-router.get(
-    "/:id",
-    validateEnrollmentId,
-    getEnrollmentById
-);
-
+router.get("/:id", getEnrollmentById);
 
 /**
  * @swagger
@@ -102,15 +82,8 @@ router.get(
  *     responses:
  *       201:
  *         description: Enrollment created successfully
- *       400:
- *         description: Enrollment validation failed
  */
-router.post(
-    "/",
-    validateEnrollmentCreate,
-    createEnrollment
-);
-
+router.post("/", createEnrollment);
 
 /**
  * @swagger
@@ -147,71 +120,10 @@ router.post(
  *     responses:
  *       200:
  *         description: Enrollment updated successfully
- *       400:
- *         description: Enrollment validation failed
  *       404:
  *         description: Enrollment not found
  */
-router.put(
-    "/:id",
-    validateEnrollmentId,
-    validateEnrollmentUpdate,
-    updateEnrollment
-);
-
-
-/**
- * @swagger
- * /api/enrollments/{id}/course-access:
- *   patch:
- *     summary: Unlock course access for an enrollment
- *     description: Unlocks course access after successful payment verification. The payment module can call this endpoint after payment is confirmed.
- *     tags: [Enrollments]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Enrollment ID
- *         schema:
- *           type: integer
- *         example: 17
- *     responses:
- *       200:
- *         description: Course access unlocked successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Course access unlocked successfully
- *                 data:
- *                   type: object
- *                   properties:
- *                     enrollmentId:
- *                       type: integer
- *                       example: 17
- *                     courseAccess:
- *                       type: boolean
- *                       example: true
- *                     enrollmentStatus:
- *                       type: string
- *                       example: ENROLLED
- *       404:
- *         description: Enrollment not found
- *       500:
- *         description: Failed to unlock course access
- */
-router.patch(
-    "/:id/course-access",
-    validateEnrollmentId,
-    unlockCourseAccess
-);
-
+router.put("/:id", updateEnrollment);
 
 /**
  * @swagger
@@ -229,16 +141,9 @@ router.patch(
  *     responses:
  *       200:
  *         description: Enrollment deleted successfully
- *       400:
- *         description: Invalid enrollment ID
  *       404:
  *         description: Enrollment not found
  */
-router.delete(
-    "/:id",
-    validateEnrollmentId,
-    deleteEnrollment
-);
-
+router.delete("/:id", deleteEnrollment);
 
 module.exports = router;

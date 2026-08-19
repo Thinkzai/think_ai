@@ -1,6 +1,5 @@
 const service = require("../services/batchService");
 
-
 const getBatches = async (req, res) => {
     try {
         const batches = await service.getAllBatches();
@@ -9,7 +8,6 @@ const getBatches = async (req, res) => {
             success: true,
             data: batches
         });
-
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -17,7 +15,6 @@ const getBatches = async (req, res) => {
         });
     }
 };
-
 
 const getBatchById = async (req, res) => {
     try {
@@ -43,7 +40,6 @@ const getBatchById = async (req, res) => {
     }
 };
 
-
 const createBatch = async (req, res) => {
     try {
         const batch = await service.createBatch(req.body);
@@ -61,13 +57,9 @@ const createBatch = async (req, res) => {
     }
 };
 
-
 const updateBatch = async (req, res) => {
     try {
-        const batch = await service.updateBatch(
-            req.params.id,
-            req.body
-        );
+        const batch = await service.updateBatch(req.params.id, req.body);
 
         res.status(200).json({
             success: true,
@@ -81,7 +73,6 @@ const updateBatch = async (req, res) => {
         });
     }
 };
-
 
 const deleteBatch = async (req, res) => {
     try {
@@ -100,9 +91,10 @@ const deleteBatch = async (req, res) => {
     }
 };
 
-
 const getBatchEnrollments = async (req, res) => {
+
     try {
+
         const enrollments =
             await service.getBatchEnrollments(req.params.batchId);
 
@@ -112,57 +104,15 @@ const getBatchEnrollments = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
             message: error.message
         });
-    }
-};
-
-
-/*
- * Automatically allocate a student to a suitable batch
- */
-const autoAllocateStudent = async (req, res) => {
-    try {
-
-        const {
-            studentName,
-            studentEmail,
-            courseId
-        } = req.body;
-
-        // Validate required fields
-        if (!studentName || !studentEmail || !courseId) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "studentName, studentEmail and courseId are required"
-            });
-        }
-
-        const result = await service.autoAllocateStudent({
-            studentName,
-            studentEmail,
-            courseId
-        });
-
-        res.status(201).json({
-            success: true,
-            message: "Student automatically allocated to a batch",
-            data: result
-        });
-
-    } catch (error) {
-
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
 
     }
-};
 
+};
 
 module.exports = {
     getBatches,
@@ -170,6 +120,5 @@ module.exports = {
     createBatch,
     updateBatch,
     deleteBatch,
-    getBatchEnrollments,
-    autoAllocateStudent
+    getBatchEnrollments
 };

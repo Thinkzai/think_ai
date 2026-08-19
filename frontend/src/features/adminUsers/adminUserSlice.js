@@ -1,9 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import {
-  getUsersApi,
-  createUserApi,
-  updateUserRoleApi,
-} from './adminUserService'
+import { getUsersApi, updateUserRoleApi } from './adminUserService'
 
 const initialState = {
   items: [],
@@ -20,18 +16,6 @@ export const fetchUsers = createAsyncThunk(
       return Array.isArray(payload) ? payload : []
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to load users')
-    }
-  }
-)
-
-export const createUser = createAsyncThunk(
-  'adminUsers/createUser',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const response = await createUserApi(userData)
-      return response.data.data
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to create user')
     }
   }
 )
@@ -70,19 +54,10 @@ const adminUserSlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
-      .addCase(createUser.fulfilled, (state, action) => {
-        if (action.payload) state.items.push(action.payload)
-      })
-      .addCase(createUser.rejected, (state, action) => {
-        state.error = action.payload
-      })
       .addCase(updateUserRole.fulfilled, (state, action) => {
         if (!action.payload) return
         const index = state.items.findIndex((u) => u.id === action.payload.id)
         if (index !== -1) state.items[index] = action.payload
-      })
-      .addCase(updateUserRole.rejected, (state, action) => {
-        state.error = action.payload
       })
   },
 })

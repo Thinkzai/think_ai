@@ -49,35 +49,11 @@ const getCourseBatches = async (courseId) => {
     });
 };
 
-/* Get course with modules and lessons */
-const getCourseContent = async (courseId) => {
-    return await prisma.course.findUnique({
-        where: {
-            id: Number(courseId)
-        },
-        include: {
-            modules: {
-                orderBy: {
-                    id: "asc"
-                },
-                include: {
-                    lessons: {
-                        orderBy: {
-                            order: "asc"
-                        }
-                    }
-                }
-            }
-        }
-    });
-};
-
 module.exports = {
     getAllCourses,
     getCourseById,
     createCourse,
     updateCourse,
     deleteCourse,
-    getCourseBatches,
-    getCourseContent
+    getCourseBatches
 };

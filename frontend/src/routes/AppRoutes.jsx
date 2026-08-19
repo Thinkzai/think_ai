@@ -19,12 +19,6 @@ import AddEnrollment from "../pages/enrollments/AddEnrollment";
 import EditEnrollment from "../pages/enrollments/EditEnrollment";
 import EnrollmentDetails from "../pages/enrollments/EnrollmentDetails";
 
-import UserList from "../pages/users/UserList.jsx";
-import AddUser from "../pages/users/AddUser.jsx";
-import EditUser from "../pages/users/EditUser.jsx";
-import UserDetails from "../pages/users/UserDetails.jsx";
-
-
 function AppRoutes() {
   return (
     <Routes>
@@ -54,12 +48,6 @@ function AppRoutes() {
           path="enrollments/:id"
           element={<EnrollmentDetails />}
         />
-
-        {/* Users */}
-        <Route path="users" element={<UserList />} />
-        <Route path="users/add" element={<AddUser />} />
-        <Route path="users/edit/:id" element={<EditUser />} />
-        <Route path="users/:id" element={<UserDetails />} />
       </Route>
     </Routes>
   );

@@ -1,25 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
 import { createEnrollment } from "../../api/enrollmentApi";
 import { getBatches } from "../../api/batchApi";
-import { selectUser } from "../../features/auth/authSlice";
-import InputField from "../../components/common/InputField";
 
 function AddEnrollment() {
   const navigate = useNavigate();
-  const user = useSelector(selectUser);
 
   const [batches, setBatches] = useState([]);
-  const [loadingBatches, setLoadingBatches] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   const [enrollment, setEnrollment] = useState({
     studentName: "",
     studentEmail: "",
     batchId: "",
-    enrollmentStatus: "ENROLLED", // was "ACTIVE"
+    enrollmentStatus: "ACTIVE",
   });
 
   useEffect(() => {
@@ -28,180 +22,128 @@ function AddEnrollment() {
 
   const loadBatches = async () => {
     try {
-      setLoadingBatches(true);
       const response = await getBatches();
       setBatches(response.data.data || []);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load batches");
-    } finally {
-      setLoadingBatches(false);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setEnrollment({
       ...enrollment,
       [name]: name === "batchId" ? Number(value) : value,
     });
   };
 
-  const getStudentCount = (batch) => {
-    return batch.enrollments?.filter(
-      (enr) =>
-        enr.enrollmentStatus === "ACTIVE" ||
-        enr.enrollmentStatus === "ENROLLED"
-    ).length || 0;
-  };
-
-  const isBatchFull = (batch) => {
-    return getStudentCount(batch) >= batch.capacity;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!enrollment.batchId) {
-      toast.error("Please select a batch");
-      return;
-    }
-
-    const selectedBatch = batches.find((b) => b.id === enrollment.batchId);
-    if (!selectedBatch) {
-      toast.error("Selected batch not found");
-      return;
-    }
-
-    const studentCount = getStudentCount(selectedBatch);
-    if (studentCount >= selectedBatch.capacity) {
-      toast.error(`Batch is full (${studentCount}/${selectedBatch.capacity})`);
-      return;
-    }
-
     try {
-      setSaving(true);
       await createEnrollment(enrollment);
-      toast.success("Enrollment Added Successfully", { theme: "dark" });
+
+      toast.success("Enrollment Added Successfully");
+
       navigate("/admin/enrollments");
     } catch (error) {
       console.error(error);
-      const message = error.response?.data?.message || "Failed to Add Enrollment";
-      toast.error(message, { theme: "dark" });
-    } finally {
-      setSaving(false);
+
+      if (error.response) {
+        console.log(error.response.data);
+      }
+
+      toast.error("Failed to Add Enrollment");
     }
   };
 
   return (
-    <div className="relative flex flex-col h-full space-y-4 sm:space-y-6 -mt-2 overflow-hidden pb-2">
-      {/* Header */}
-      <div className="flex items-center justify-between shrink-0 max-w-3xl mx-auto w-full">
+    <div className="max-w-5xl mx-auto">
+
+      <div className="flex justify-between items-center mb-8">
+
         <div>
-          <h1 className="text-2xl font-semibold text-white">Add Enrollment</h1>
-          <p className="text-sm text-gray-400 mt-1">Enroll a student into a batch.</p>
+          <h1 className="text-3xl font-bold text-white">
+            Add Enrollment
+          </h1>
+
+          <p className="text-gray-400 mt-1">
+            Enroll a student into a batch.
+          </p>
         </div>
+
         <button
           type="button"
           onClick={() => navigate("/admin/enrollments")}
-          className="text-xs px-3.5 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:border-gray-500 transition-all uppercase tracking-wider font-semibold"
+          className="px-5 py-3 rounded-xl bg-[#1A1F2B] border border-gray-700 text-cyan-400 hover:bg-[#22283A] transition"
         >
           ← Back
         </button>
+
       </div>
 
-      {/* Form Card */}
-      <div className="flex-1 overflow-auto glass-panel rounded-2xl p-6 sm:p-8 bg-[#1A1F2B] border border-gray-800 custom-scrollbar max-w-3xl mx-auto w-full">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Student Name</label>
-            <InputField
-              type="text"
-              name="studentName"
-              value={enrollment.studentName}
-              onChange={handleChange}
-              placeholder="Enter student name"
-              required
-            />
-          </div>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-[#1A1F2B] border border-gray-800 rounded-2xl p-8 grid grid-cols-2 gap-6"
+      >
 
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Student Email</label>
-            <InputField
-              type="email"
-              name="studentEmail"
-              value={enrollment.studentEmail}
-              onChange={handleChange}
-              placeholder="Enter student email"
-              required
-            />
-          </div>
+        <input
+          type="text"
+          name="studentName"
+          placeholder="Student Name"
+          value={enrollment.studentName}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-          <div className="sm:col-span-2 flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Batch</label>
-            <select
-              name="batchId"
-              value={enrollment.batchId}
-              onChange={handleChange}
-              className="bg-[#0B0F19] border border-gray-700/80 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
-              required
-              disabled={loadingBatches}
-            >
-              <option value="">
-                {loadingBatches ? "Loading batches..." : "Select Batch"}
-              </option>
-              {batches.map((batch) => {
-                const studentCount = getStudentCount(batch);
-                const full = isBatchFull(batch);
-                return (
-                  <option key={batch.id} value={batch.id} disabled={full}>
-                    {batch.name} — {studentCount}/{batch.capacity} {full ? "(FULL)" : ""}
-                  </option>
-                );
-              })}
-            </select>
+        <input
+          type="email"
+          name="studentEmail"
+          placeholder="Student Email"
+          value={enrollment.studentEmail}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-            {enrollment.batchId && (
-              (() => {
-                const selectedBatch = batches.find((b) => b.id === enrollment.batchId);
-                if (!selectedBatch) return null;
-                const studentCount = getStudentCount(selectedBatch);
-                const full = isBatchFull(selectedBatch);
-                return (
-                  <p className={`text-xs mt-1.5 font-medium ${full ? "text-rose-400" : "text-emerald-400"}`}>
-                    Students: {studentCount}/{selectedBatch.capacity}
-                    {full ? " — Batch Full" : ` — ${selectedBatch.capacity - studentCount} seats available`}
-                  </p>
-                );
-              })()
-            )}
-          </div>
+        <select
+          name="batchId"
+          value={enrollment.batchId}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500"
+          required
+        >
+          <option value="">Select Batch</option>
 
-          <div className="sm:col-span-2 flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</label>
-            <select
-              name="enrollmentStatus"
-              value={enrollment.enrollmentStatus}
-              onChange={handleChange}
-              className="bg-[#0B0F19] border border-gray-700/80 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
-            >
-              <option value="ENROLLED">ENROLLED</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </select>
-          </div>
+          {batches.map((batch) => (
+            <option key={batch.id} value={batch.id}>
+              {batch.name}
+            </option>
+          ))}
+        </select>
 
-          <div className="col-span-1 sm:col-span-2 pt-4">
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full py-3.5 text-sm font-bold bg-gradient-to-r from-indigo-500 to-cyan-400 hover:from-indigo-400 hover:to-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed text-white border-0 rounded-xl transition-all duration-300 shadow-lg hover:shadow-cyan-500/50 uppercase tracking-wider"
-            >
-              {saving ? "Saving..." : "Save Enrollment"}
-            </button>
-          </div>
-        </form>
-      </div>
+        <select
+          name="enrollmentStatus"
+          value={enrollment.enrollmentStatus}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500"
+        >
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+        </select>
+
+        <button
+          type="submit"
+          className="col-span-2 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold py-3 rounded-xl transition"
+        >
+          Save Enrollment
+        </button>
+
+      </form>
+
     </div>
   );
 }

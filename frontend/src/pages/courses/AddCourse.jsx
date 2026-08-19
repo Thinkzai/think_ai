@@ -1,306 +1,156 @@
-import React, { useState, useEffect } from 'react';
-import Modal from '../../components/common/Modal';
-import InputField from '../../components/common/InputField';
-import Button from '../../components/common/Button';
+import { useState } from "react";
+import { createCourse } from "../../api/courseApi";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
-const EMPTY_COURSE = {
-  title: '',
-  description: '',
-  duration: '',
-  category: '',
-  level: 'Beginner',
-  language: 'English',
-  price: '',
-  thumbnail: '',
-  thumbnailFile: null,
-  videoFile: null,
-  videoUrl: '',
-  status: 'ACTIVE',
-};
+function AddCourse() {
+  const navigate = useNavigate();
 
-// Keep this in sync with CourseCard.jsx's TECH_IMAGES list.
-// Ideally, move this into a shared file (e.g. src/constants/techImages.js)
-// and import it in both CourseCard.jsx and this file to avoid duplication.
-const TECH_IMAGE_OPTIONS = [
-  { label: 'JavaScript', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg' },
-  { label: 'TypeScript', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg' },
-  { label: 'Python', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg' },
-  { label: 'Java', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg' },
-  { label: 'React', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg' },
-  { label: 'Node.js', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg' },
-  { label: 'Angular', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/angularjs/angularjs-original.svg' },
-  { label: 'Vue', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg' },
-  { label: 'C', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg' },
-  { label: 'C++', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg' },
-  { label: 'C#', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/csharp/csharp-original.svg' },
-  { label: 'MongoDB', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg' },
-  { label: 'SQL', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg' },
-];
-
-export default function AddCourse({ isOpen, onClose, course, onSave }) {
-  const [formData, setFormData] = useState(EMPTY_COURSE);
-  const [thumbnailPreview, setThumbnailPreview] = useState(null);
-  const [videoFileName, setVideoFileName] = useState('');
-
-  useEffect(() => {
-    if (course) {
-      setFormData({ ...EMPTY_COURSE, ...course });
-      setThumbnailPreview(course.thumbnail || null);
-      setVideoFileName(course.videoUrl ? 'Existing video attached' : '');
-    } else {
-      setFormData(EMPTY_COURSE);
-      setThumbnailPreview(null);
-      setVideoFileName('');
-    }
-  }, [course, isOpen]);
+  const [course, setCourse] = useState({
+    title: "",
+    description: "",
+    category: "",
+    price: "",
+    duration: "",
+    thumbnail: "",
+    status: "ACTIVE",
+  });
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'number' ? Number(value) : value,
+    const { name, value } = e.target;
+
+    setCourse({
+      ...course,
+      [name]: name === "price" ? Number(value) : value,
     });
   };
 
-  // Select a predefined tech image from the gallery
-  const handleSelectTechImage = (option) => {
-    setFormData((prev) => ({ ...prev, thumbnail: option.img, thumbnailFile: null }));
-    setThumbnailPreview(option.img);
-  };
-
-  // Handle custom image thumbnail uploads (supports png, jpg, webp, svg, etc.)
-  const handleThumbnailChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, thumbnailFile: file, thumbnail: file.name }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnailPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleClearThumbnail = () => {
-    setFormData((prev) => ({ ...prev, thumbnail: '', thumbnailFile: null }));
-    setThumbnailPreview(null);
-  };
-
-  // Handle course video file uploads (supports mp4, mkv, webm, mov, etc.)
-  const handleVideoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, videoFile: file }));
-      setVideoFileName(file.name);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+
+    try {
+      await createCourse({
+        ...course,
+        price: Number(course.price),
+      });
+
+      toast.success("Course Added Successfully");
+      navigate("/admin/courses");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to Add Course");
+    }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={course ? 'Edit Course' : 'Add New Course'}
-    >
-      <form onSubmit={handleSubmit} className="space-y-5">
+    <div className="max-w-5xl mx-auto">
 
-        <InputField
-          label="Course Title"
-          id="title"
-          name="title"
+      <div className="flex justify-between items-center mb-8">
+
+        <div>
+          <h1 className="text-3xl font-bold text-white">
+            Add Course
+          </h1>
+
+          <p className="text-gray-400 mt-1">
+            Create a new course for the LMS.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => navigate("/admin/courses")}
+          className="px-5 py-3 rounded-xl bg-[#1A1F2B] border border-gray-700 text-cyan-400 hover:bg-[#22283A] transition"
+        >
+          ← Back
+        </button>
+
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-[#1A1F2B] border border-gray-800 rounded-2xl p-8 grid grid-cols-2 gap-6"
+      >
+
+        <input
           type="text"
-          value={formData.title}
+          name="title"
+          placeholder="Course Title"
+          value={course.title}
           onChange={handleChange}
-          placeholder="e.g. Node.js Fundamentals"
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
           required
         />
 
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1.5">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Learn Node.js from scratch"
-            className="w-full bg-[#0D1220] border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors text-sm"
-          />
-        </div>
+        <input
+          type="text"
+          name="category"
+          placeholder="Category"
+          value={course.category}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-        {/* Thumbnail / Card Image Section */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-medium text-gray-300">
-              Course Thumbnail / Card Image
-            </label>
-            {thumbnailPreview && (
-              <button
-                type="button"
-                onClick={handleClearThumbnail}
-                className="text-[11px] text-gray-500 hover:text-rose-400 transition-colors cursor-pointer"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+        <input
+          type="number"
+          name="price"
+          placeholder="Price"
+          value={course.price}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-          {/* Current selection preview */}
-          <div className="flex items-center gap-3 mb-3">
-            {thumbnailPreview ? (
-              <div className="w-16 h-16 rounded-lg overflow-hidden border border-cyan-500/40 shrink-0 bg-white flex items-center justify-center">
-                <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-full object-contain p-1" />
-              </div>
-            ) : (
-              <div className="w-16 h-16 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-xs text-gray-500 shrink-0">
-                No Image
-              </div>
-            )}
-            <p className="text-xs text-gray-500">Pick an icon below, or upload a custom image.</p>
-          </div>
+        <input
+          type="text"
+          name="duration"
+          placeholder="Duration"
+          value={course.duration}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+          required
+        />
 
-          {/* Tech image gallery */}
-          <div className="grid grid-cols-6 sm:grid-cols-7 gap-2 p-3 bg-[#0D1220] border border-gray-700 rounded-lg max-h-40 overflow-y-auto">
-            {TECH_IMAGE_OPTIONS.map((option) => {
-              const isSelected = formData.thumbnail === option.img;
-              return (
-                <button
-                  key={option.label}
-                  type="button"
-                  onClick={() => handleSelectTechImage(option)}
-                  title={option.label}
-                  className={`aspect-square rounded-lg flex items-center justify-center p-2 bg-white border-2 transition-all cursor-pointer ${
-                    isSelected
-                      ? 'border-cyan-400 ring-2 ring-cyan-400/40'
-                      : 'border-transparent hover:border-cyan-500/40'
-                  }`}
-                >
-                  <img src={option.img} alt={option.label} className="w-full h-full object-contain" />
-                </button>
-              );
-            })}
-          </div>
+        <input
+          type="text"
+          name="thumbnail"
+          placeholder="Thumbnail URL"
+          value={course.thumbnail}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+        />
 
-          {/* Custom upload fallback */}
-          <div className="mt-3">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailChange}
-              className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20 cursor-pointer"
-            />
-          </div>
-        </div>
+        <select
+          name="status"
+          value={course.status}
+          onChange={handleChange}
+          className="bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500"
+        >
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+        </select>
 
-        {/* Course Video Upload Section */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">
-            Upload Course Video (MP4, WEBM, MKV, MOV)
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="file"
-              accept="video/mp4,video/webm,video/mkv,video/quicktime"
-              onChange={handleVideoChange}
-              className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 cursor-pointer"
-            />
-          </div>
-          {videoFileName && (
-            <p className="text-xs text-indigo-400 mt-1.5 font-mono truncate">
-              Selected video: {videoFileName}
-            </p>
-          )}
-        </div>
+        <textarea
+          name="description"
+          placeholder="Course Description"
+          value={course.description}
+          onChange={handleChange}
+          rows="5"
+          className="col-span-2 bg-[#0B0F19] border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+        />
 
-        <div className="grid grid-cols-2 gap-4">
-          <InputField
-            label="Duration"
-            id="duration"
-            name="duration"
-            type="text"
-            value={formData.duration}
-            onChange={handleChange}
-            placeholder="e.g. 30 Days"
-          />
-          <InputField
-            label="Category"
-            id="category"
-            name="category"
-            type="text"
-            value={formData.category}
-            onChange={handleChange}
-            placeholder="e.g. Backend"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="level" className="block text-sm font-medium text-gray-300 mb-1.5">Level</label>
-            <select
-              id="level"
-              name="level"
-              value={formData.level}
-              onChange={handleChange}
-              className="w-full bg-[#0D1220] border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors cursor-pointer text-sm"
-            >
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
-          </div>
-          <InputField
-            label="Language"
-            id="language"
-            name="language"
-            type="text"
-            value={formData.language}
-            onChange={handleChange}
-            placeholder="e.g. English"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <InputField
-            label="Price (₹)"
-            id="price"
-            name="price"
-            type="number"
-            value={formData.price}
-            onChange={handleChange}
-            placeholder="4999"
-          />
-          <InputField
-            label="Status"
-            id="status"
-            name="status"
-            type="text"
-            value={formData.status}
-            onChange={handleChange}
-            placeholder="ACTIVE"
-          />
-        </div>
-
-        <div className="pt-4 mt-2 flex items-center justify-end gap-3 border-t border-gray-800/60">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <Button
-            type="submit"
-            label={course ? 'Save Changes' : 'Create Course'}
-          />
-        </div>
+        <button
+          type="submit"
+          className="col-span-2 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold py-3 rounded-xl transition"
+        >
+          Save Course
+        </button>
 
       </form>
-    </Modal>
+
+    </div>
   );
 }
+
+export default AddCourse;
