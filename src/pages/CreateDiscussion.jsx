@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ForumApi } from '../services/forumApi.js';
 import { navigate } from '../services/router.js';
+import { useToast } from '../components/Toast.jsx';
+import RichTextEditor from '../components/RichTextEditor.jsx';
 
 export default function CreateDiscussion() {
   const [title, setTitle] = useState('');
@@ -9,6 +11,7 @@ export default function CreateDiscussion() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const { toastSuccess, toastError } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -37,9 +40,11 @@ export default function CreateDiscussion() {
         tags: selectedTags,
         authorId: 'u4',
       });
+      toastSuccess('Discussion posted successfully!');
       navigate(`post/${post.id}`);
     } catch (err) {
       setError(err.message ?? 'Could not create your discussion');
+      toastError(err.message ?? 'Could not create your discussion');
       setSubmitting(false);
     }
   };
@@ -47,7 +52,7 @@ export default function CreateDiscussion() {
   return (
     <div className="create-page">
       <a className="back-link" href="#/">
-        ← Back to forum
+        &larr; Back to forum
       </a>
 
       <header className="create-header">
@@ -72,7 +77,7 @@ export default function CreateDiscussion() {
             id="create-title"
             className="text-input"
             type="text"
-            placeholder="Summarize your question in one line…"
+            placeholder="Summarize your question in one line..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
@@ -84,14 +89,11 @@ export default function CreateDiscussion() {
           <label className="field-label" htmlFor="create-content">
             Details
           </label>
-          <textarea
-            id="create-content"
-            className="text-area"
-            rows="8"
-            placeholder="Describe the problem, what you tried, and expected vs. actual behavior…"
+          <RichTextEditor
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
+            onChange={setContent}
+            placeholder="Describe the problem, what you tried, and expected vs. actual behavior..."
+            minHeight={200}
           />
         </div>
 
@@ -110,13 +112,13 @@ export default function CreateDiscussion() {
             ))}
           </div>
           <p className="field-hint">
-            Select at least one tag — {selectedTags.length} selected.
+            Select at least one tag &mdash; {selectedTags.length} selected.
           </p>
         </div>
 
         <div className="create-actions">
           <button className="btn" type="submit" disabled={submitting}>
-            {submitting ? 'Posting…' : 'Post Discussion'}
+            {submitting ? 'Posting...' : 'Post Discussion'}
           </button>
           <a className="btn btn-ghost" href="#/">
             Cancel

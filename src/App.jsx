@@ -6,6 +6,9 @@ import CreateDiscussion from './pages/CreateDiscussion.jsx';
 import UserProfile from './pages/UserProfile.jsx';
 import AssessmentPage from './pages/AssessmentPage.jsx';
 import BookmarksPage from './pages/BookmarksPage.jsx';
+import ForumFeatures from './pages/ForumFeatures.jsx';
+import ModerationDashboard from './components/ModerationDashboard.jsx';
+import { ToastProvider } from './components/Toast.jsx';
 import { parseHashRoute } from './services/router.js';
 
 export default function App() {
@@ -30,17 +33,23 @@ export default function App() {
     page = <AssessmentPage />;
   } else if (route.name === 'bookmarks') {
     page = <BookmarksPage />;
+  } else if (route.name === 'forum-features') {
+    page = <ForumFeatures />;
+  } else if (route.name === 'moderation') {
+    page = <ModerationDashboard />;
   } else {
     page = <CommunityForum key="all" />;
   }
 
   return (
-    <div className="app">
-      <Navbar />
-      <main className="app-main">{page}</main>
-      <footer className="app-footer">
-        <p>© {new Date().getFullYear()} Thinkz Community — built with React.</p>
-      </footer>
-    </div>
+    <ToastProvider>
+      <div className="app">
+        <Navbar />
+        <main className="app-main">{page}</main>
+        <footer className="app-footer">
+          <p>&copy; {new Date().getFullYear()} Thinkz Community &mdash; built with React.</p>
+        </footer>
+      </div>
+    </ToastProvider>
   );
 }

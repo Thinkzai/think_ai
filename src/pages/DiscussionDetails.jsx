@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ForumApi, getUserVote } from '../services/forumApi.js';
 import VoteButtons from '../components/VoteButtons.jsx';
 import UserProfile from '../components/UserProfile.jsx';
+import { useToast } from '../components/Toast.jsx';
+import RichTextEditor from '../components/RichTextEditor.jsx';
 
 function timeAgo(dateString) {
   const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
@@ -32,6 +34,7 @@ export default function DiscussionDetails({ postId }) {
   const [notFound, setNotFound] = useState(false);
   const [userVote, setUserVote] = useState(null);
   const mounted = useRef(true);
+  const { toastSuccess, toastError } = useToast();
 
   useEffect(() => {
     mounted.current = true;
@@ -74,11 +77,12 @@ export default function DiscussionDetails({ postId }) {
         setUserVote(getUserVote(postId));
       } catch (err) {
         setError(err.message ?? 'Could not record your vote');
+        toastError(err.message ?? 'Could not record your vote');
       } finally {
         setBusy(false);
       }
     },
-    [postId]
+    [postId, toastError]
   );
 
   const handleToggleSolved = useCallback(async () => {
@@ -87,12 +91,14 @@ export default function DiscussionDetails({ postId }) {
     try {
       const updated = await ForumApi.toggleSolved(postId);
       setPost(updated);
+      toastSuccess(updated.isSolved ? 'Marked as solved' : 'Marked as unsolved');
     } catch (err) {
       setError(err.message ?? 'Could not update solved status');
+      toastError(err.message ?? 'Could not update solved status');
     } finally {
       setBusy(false);
     }
-  }, [postId]);
+  }, [postId, toastSuccess, toastError]);
 
   const handleSubmitComment = useCallback(
     async (e) => {
@@ -106,20 +112,22 @@ export default function DiscussionDetails({ postId }) {
         });
         setComments((prev) => [...prev, comment]);
         setCommentText('');
+        toastSuccess('Comment posted successfully');
       } catch (err) {
         setError(err.message ?? 'Could not add your comment');
+        toastError(err.message ?? 'Could not add your comment');
       } finally {
         setBusy(false);
       }
     },
-    [postId, commentText]
+    [postId, commentText, toastSuccess, toastError]
   );
 
   if (busy && !post) {
     return (
       <div className="loading" role="status">
         <span className="spinner" aria-hidden="true" />
-        <span>Loading discussion…</span>
+        <span>Loading discussion...</span>
       </div>
     );
   }
@@ -143,14 +151,14 @@ export default function DiscussionDetails({ postId }) {
   return (
     <div className="detail-page">
       <a className="back-link" href="#/">
-        ← Back to forum
+        &larr; Back to forum
       </a>
 
       <article className="detail-card">
         <div className="detail-head">
           {post.isPinned && <span className="badge badge-pinned">Pinned</span>}
           {post.isSolved && (
-            <span className="badge badge-solved">✓ Solved</span>
+            <span className="badge badge-solved">Solved</span>
           )}
         </div>
 
@@ -229,13 +237,13 @@ export default function DiscussionDetails({ postId }) {
           <textarea
             className="comment-input"
             rows="4"
-            placeholder="Share your answer or follow-up question…"
+            placeholder="Share your answer or follow-up question..."
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             required
           />
           <button className="btn" type="submit" disabled={busy || !commentText.trim()}>
-            {busy ? 'Posting…' : 'Post comment'}
+            {busy ? 'Posting...' : 'Post comment'}
           </button>
         </form>
       </section>
@@ -264,7 +272,7 @@ function CommentItem({ comment }) {
         <div className="comment-footer">
           <span>{timeAgo(comment.createdAt)}</span>
           {comment.upvotes > 0 && (
-            <span>↑ {comment.upvotes}</span>
+            <span>&uarr; {comment.upvotes}</span>
           )}
         </div>
       </div>

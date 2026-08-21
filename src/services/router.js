@@ -26,6 +26,9 @@ export function parseHashRoute(hash) {
   if (root === 'bookmarks') {
     return { name: 'bookmarks', params: {} };
   }
+  if (root === 'moderation') {
+    return { name: 'moderation', params: {} };
+  }
   return { name: 'forum', params: {} };
 }
 

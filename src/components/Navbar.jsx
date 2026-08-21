@@ -69,8 +69,12 @@ export default function Navbar() {
           <a className="navbar-link" href="#/bookmarks">
             Bookmarks
           </a>
+
           <a className="navbar-link" href="#/assessment">
             Assessment
+          </a>
+          <a className="navbar-link" href="#/moderation">
+            Moderation
           </a>
         </nav>
 
