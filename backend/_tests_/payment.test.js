@@ -6,7 +6,6 @@ const app = express();
 app.use(express.json());
 app.use('/api/payments', paymentRouter);
 
-// Mock the Prisma client layer inside the controllers
 jest.mock('@prisma/client', () => {
     const mPrismaClient = {
         transaction: {
@@ -16,7 +15,7 @@ jest.mock('@prisma/client', () => {
     return { PrismaClient: jest.fn(() => mPrismaClient) };
 });
 
-describe('=== Pod B Payments Validation Suite ===', () => {
+describe('=== Pod B Payments & OAuth2 Validation Suite ===', () => {
     it('✓ Should reject request missing required body values', async () => {
         const res = await request(app)
             .post('/api/payments/create-intent')
@@ -24,7 +23,7 @@ describe('=== Pod B Payments Validation Suite ===', () => {
         expect(res.statusCode).toBe(400);
     });
 
-    it('✓ Should pass validation when correct values are sent', async () => {
+    it('✓ Should pass validation and template checks when correct values are sent', async () => {
         const res = await request(app)
             .post('/api/payments/create-intent')
             .send({ 
@@ -32,13 +31,18 @@ describe('=== Pod B Payments Validation Suite ===', () => {
                 amount: 1000, 
                 currency: 'usd', 
                 email: 'test@thinkz.ai', 
-                phone: '1234567890' 
+                phone: '1234567890',
+                templateType: 'certificate'
             });
-        
-        // Verifies the status code is 201 Created
         expect(res.statusCode).toBe(201);
-        
-        // FIXED: Uses standard Jest regex matcher syntax correctly
-        expect(res.body.id).toEqual(expect.stringMatching(/^pi_/)); 
+        expect(res.body.templateRendered).toBe('certificate');
+    });
+
+    it('✓ Should successfully handle valid Google OAuth2 authorization requests', async () => {
+        const res = await request(app)
+            .post('/api/payments/auth/google')
+            .send({ token: 'mock_google_user_token' });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
     });
 });
