@@ -27,6 +27,13 @@ services:
         condition: service_healthy
     expose:
       - "5000"
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-2
+        awslogs-group: /thinkz-ai/backend
+        awslogs-stream: thinkz-backend
+        awslogs-create-group: "true"
 
   frontend:
     build:
@@ -37,6 +44,13 @@ services:
       - backend
     ports:
       - "80:80"
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-2
+        awslogs-group: /thinkz-ai/frontend
+        awslogs-stream: thinkz-frontend
+        awslogs-create-group: "true"
 
 volumes:
   postgres_data:
