@@ -10,3 +10,14 @@ yarn-error.log*
 !.vscode/extensions.json
 .idea
 .src
+
+# Deployment/runtime files not for source control
+backups/
+backend/package-lock.json.before-fix
+
+# Database runtime backups
+backups/
+backend/package-lock.json.before-fix
+backups/*.dump
+backups/*.sql
+.env

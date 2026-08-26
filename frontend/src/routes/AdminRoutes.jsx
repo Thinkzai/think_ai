@@ -25,10 +25,10 @@ import AddModule from '../pages/modules/AddModule';
 import EditModule from '../pages/modules/EditModule';
 import ModuleDetails from '../pages/modules/ModuleDetails';
 
-import LessonList from '../pages/lessons/LessonList';
-import AddLesson from '../pages/lessons/AddLesson';
-import EditLesson from '../pages/lessons/EditLesson';
-import LessonDetails from '../pages/lessons/LessonDetails';
+import LessonList from '../pages/lessons/Lessonlist';
+import AddLesson from '../pages/lessons/Addlesson';
+import EditLesson from '../pages/lessons/Editlesson';
+import LessonDetails from '../pages/lessons/Lessondetails';
 import RBACMatrix from "../pages/admin/RBACMatrix";
 
 function AdminRoutes() {

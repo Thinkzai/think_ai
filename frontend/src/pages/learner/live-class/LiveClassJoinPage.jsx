@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import LiveClassJoin from './LiveClassJoin';
+import LiveClassJoin from './Liveclassjoin';
 import { fetchClassInfo, joinSession } from '../../../api/liveSessionApi';
 
 export default function LiveClassJoinPage() {

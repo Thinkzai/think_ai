@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import LiveClassJoin from "./LiveClassJoin";
+import LiveClassJoin from "./Liveclassjoin";
 
 function makeClassInfo(minutesFromNow, durationMinutes = 60) {
   return {

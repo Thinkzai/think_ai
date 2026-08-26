@@ -15,7 +15,7 @@ const lessonProgressRoutes = require("./routes/lessonProgressRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const assessmentRoutes = require("./routes/assessmentRoutes");
 const codeExecutionRoutes = require("./routes/codeExecutionRoutes");
-const auditLogRoutes = require("./routes/auditLogs");
+const auditLogRoutes = require("./routes/auditlogs");
 const analyticsRoutes = require("./routes/analytics");
 
 const app = express();
