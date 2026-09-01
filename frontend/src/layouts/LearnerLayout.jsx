@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { to: '/learner/live', label: 'Live Classes' },
 
   { to: '/forum', label: 'Community' },
+  { to: '/live-studio', label: 'Live Studio' },
 ];
 
 export default function LearnerLayout() {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Award, CheckCircle, Video, Code, HelpCircle, Check } from 'lucide-react';
+import { Award, CheckCircle, Video, Code, HelpCircle, Check, Menu, X } from 'lucide-react';
 
 import { selectUser } from '../../features/auth/authSlice';
 import { fetchMyEnrollments, selectMyEnrollments } from '../../features/enrollments/enrollmentSlice';
@@ -92,6 +92,7 @@ export default function CoursePlayer() {
   const [feedback, setFeedback] = useState(null);
   const [activeTab, setActiveTab] = useState('notes');
   const [noteText, setNoteText] = useState('');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Fetch assessments for the currently expanded module
   const assessments = useSelector(selectAssessmentsByModuleId(activeModule));
@@ -131,7 +132,7 @@ export default function CoursePlayer() {
     }
   }, [dispatch, activeModule]);
 
-  // Default select first module and its first lesson on load
+  // Default select first module on load
   useEffect(() => {
     if (modules.length > 0 && !activeModule) {
       setActiveModule(modules[0].id || modules[0]._id);
@@ -177,7 +178,19 @@ export default function CoursePlayer() {
     }
   };
 
-  // Auto-save progress when closing, switching lessons, or component unmounts
+  // Periodic auto-save heartbeat every 30 seconds while video plays
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const video = videoRef.current;
+      if (video && !video.paused) {
+        sendVideoProgress();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [currentLesson, enrollmentId]);
+
+  // Auto-save progress when switching lessons or unmounting
   useEffect(() => {
     return () => {
       sendVideoProgress();
@@ -210,12 +223,24 @@ export default function CoursePlayer() {
   const currentLessonId = currentLesson?.id || currentLesson?._id;
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-[#151821] text-slate-900 dark:text-[#f1f3f9] font-sans transition-colors duration-300 py-8">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-[#151821] text-slate-900 dark:text-[#f1f3f9] font-sans transition-colors duration-300 py-4 sm:py-8">
+      
+      {/* Mobile Sidebar Toggle Bar */}
+      <div className="max-w-[90rem] mx-auto px-4 sm:px-6 mb-4 flex lg:hidden items-center justify-between">
+        <button
+          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+          className="px-4 py-2 rounded-xl text-xs font-bold bg-purple-600 text-white shadow-md flex items-center gap-2 cursor-pointer"
+        >
+          {mobileSidebarOpen ? <X size={15} /> : <Menu size={15} />}
+          {mobileSidebarOpen ? "Close Curriculum" : "Open Curriculum & Modules"}
+        </button>
+      </div>
+
       <main className="max-w-[90rem] w-full mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* Left Sidebar (3 spans): Course Curriculum & Module Assessments */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-[#262b38] rounded-3xl p-6 shadow-xl space-y-4">
+        {/* Left Sidebar (Curriculum): Responsive Drawer on Mobile, Fixed Column on Desktop */}
+        <div className={`lg:col-span-3 space-y-6 ${mobileSidebarOpen ? 'block' : 'hidden lg:block'}`}>
+          <div className="bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-[#262b38] rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">Course Curriculum</h3>
               <button
@@ -250,12 +275,12 @@ export default function CoursePlayer() {
                           moduleId={modId}
                           currentLessonId={currentLessonId}
                           onSelectLesson={(lesson) => {
-                            sendVideoProgress(); // Save progress of previous lesson before switching
+                            sendVideoProgress();
                             setCurrentLesson(lesson);
+                            setMobileSidebarOpen(false); // auto-close drawer on mobile selection
                           }}
                         />
 
-                        {/* Module Assessments Button inside Sidebar */}
                         {assessments?.length > 0 && (
                           <div className="pt-2 border-t border-slate-200 dark:border-slate-800 px-2 space-y-2">
                             <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">Module Tasks &amp; Quizzes</span>
@@ -302,7 +327,7 @@ export default function CoursePlayer() {
           </div>
         </div>
 
-        {/* Center Main Area (6 spans): Video Player & Tabs */}
+        {/* Center Main Area (Video & Tabs) */}
         <div className="lg:col-span-6 flex flex-col space-y-6">
           <div className="bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-[#262b38] rounded-3xl overflow-hidden shadow-2xl">
             <div
@@ -343,19 +368,19 @@ export default function CoursePlayer() {
             </div>
 
             {/* Lesson Metadata */}
-            <div className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-slate-200 dark:border-[#262b38]">
+            <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-slate-200 dark:border-[#262b38]">
               <div>
                 <span className="text-xs uppercase tracking-wider text-purple-600 dark:text-purple-400 font-semibold bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full">
                   {course?.title || 'Course Details'}
                 </span>
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-3">
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-3">
                   {currentLesson?.title || 'No lesson selected'}
                 </h1>
               </div>
               <button
                 onClick={handleMarkComplete}
                 disabled={!currentLesson}
-                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg shadow-purple-500/25 flex items-center space-x-2 cursor-pointer"
+                className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg shadow-purple-500/25 flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <Check size={14} />
                 <span>Mark as Complete</span>
@@ -364,7 +389,7 @@ export default function CoursePlayer() {
           </div>
 
           {/* Interactive Tabs */}
-          <div className="bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-[#262b38] rounded-3xl p-6 shadow-xl">
+          <div className="bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-[#262b38] rounded-3xl p-4 sm:p-6 shadow-xl">
             <div className="flex space-x-6 border-b border-slate-200 dark:border-[#262b38] pb-3 text-sm font-semibold">
               <button
                 onClick={() => setActiveTab('notes')}
@@ -410,7 +435,7 @@ export default function CoursePlayer() {
           </div>
         </div>
 
-        {/* Right Sidebar (3 spans): Overall Progress Tracker */}
+        {/* Right Sidebar (Progress Tracker) */}
         <div className="lg:col-span-3 space-y-6">
           <div className="bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-[#262b38] rounded-3xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-3">

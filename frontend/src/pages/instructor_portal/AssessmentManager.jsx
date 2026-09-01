@@ -17,7 +17,7 @@ import {
   Eye,
   X,
   CheckCircle,
-  Code2
+  Menu
 } from "lucide-react";
 
 import { getCourses } from "../../api/courseApi";
@@ -36,11 +36,9 @@ import {
   createAssessmentThunk,
   updateAssessmentThunk,
   deleteAssessmentThunk,
-  fetchAssessmentAnalytics,
   selectAssessmentsByModuleId,
   selectAssessmentsLoading,
   selectAssessmentError,
-  selectAssessmentAnalytics,
   clearAssessmentError,
 } from "../../features/assessments/assessmentSlice";
 
@@ -58,7 +56,7 @@ function IconBtn({ onClick, title, tone = "default", disabled, children }) {
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 cursor-pointer ${toneClasses}`}
+      className={`p-2 rounded-lg transition-colors disabled:opacity-40 cursor-pointer ${toneClasses}`}
     >
       {children}
     </button>
@@ -68,25 +66,29 @@ function IconBtn({ onClick, title, tone = "default", disabled, children }) {
 function ConfirmDelete({ label, busy, onCancel, onConfirm }) {
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm backdrop-blur-xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 shadow-lg"
+      className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 py-3 rounded-2xl text-sm backdrop-blur-xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 shadow-lg"
       style={{ fontFamily: "Inter, sans-serif" }}
     >
-      <AlertCircle size={16} className="text-red-500 shrink-0" />
-      <span className="text-slate-900 dark:text-slate-100 font-medium truncate">Delete "{label}"?</span>
-      <button
-        onClick={onConfirm}
-        disabled={busy}
-        className="ml-auto px-3 py-1 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-500 disabled:opacity-50 transition shadow-md shadow-red-500/20 cursor-pointer"
-      >
-        {busy ? "Deleting…" : "Delete"}
-      </button>
-      <button
-        onClick={onCancel}
-        disabled={busy}
-        className="px-3 py-1 rounded-xl text-xs text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
-      >
-        Cancel
-      </button>
+      <div className="flex items-center gap-2">
+        <AlertCircle size={16} className="text-red-500 shrink-0" />
+        <span className="text-slate-900 dark:text-slate-100 font-medium truncate">Delete "{label}"?</span>
+      </div>
+      <div className="flex items-center gap-2 sm:ml-auto w-full sm:w-auto justify-end">
+        <button
+          onClick={onConfirm}
+          disabled={busy}
+          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-500 disabled:opacity-50 transition shadow-md shadow-red-500/20 cursor-pointer"
+        >
+          {busy ? "Deleting…" : "Delete"}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={busy}
+          className="px-3 py-1.5 rounded-xl text-xs text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
@@ -95,7 +97,7 @@ function AssessmentViewModal({ assessment, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div
-        className="w-full max-w-3xl p-6 rounded-3xl bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6 relative text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto"
+        className="w-full max-w-3xl p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#1a1e2b] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6 relative text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto"
         style={{ fontFamily: "Inter, sans-serif" }}
       >
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -103,7 +105,7 @@ function AssessmentViewModal({ assessment, onClose }) {
             <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
               {assessment.type || "MCQ"} Assessment Details
             </span>
-            <h3 className="text-xl font-bold font-fraunces mt-1">{assessment.title}</h3>
+            <h3 className="text-lg sm:text-xl font-bold font-fraunces mt-1">{assessment.title}</h3>
             {assessment.description && (
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{assessment.description}</p>
             )}
@@ -125,8 +127,8 @@ function AssessmentViewModal({ assessment, onClose }) {
             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Duration</span>
             <p className="text-sm font-bold font-mono">{assessment.duration ? `${assessment.duration} mins` : 'N/A'}</p>
           </div>
-          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Total Questions</span>
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 col-span-2 sm:col-span-1">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Questions</span>
             <p className="text-sm font-bold font-mono">{assessment.questions?.length || 0}</p>
           </div>
         </div>
@@ -137,7 +139,7 @@ function AssessmentViewModal({ assessment, onClose }) {
           {assessment.questions?.length > 0 ? (
             assessment.questions.map((q, qIdx) => (
               <div key={qIdx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-3">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div className="flex items-start gap-2">
                     <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                       Q{qIdx + 1} ({q.questionType || 'MCQ'})
@@ -149,7 +151,6 @@ function AssessmentViewModal({ assessment, onClose }) {
                   </span>
                 </div>
 
-                {/* Dynamically render Coding problem info or MCQ options based on questionType */}
                 {q.questionType === "CODING" ? (
                   <div className="space-y-3 pl-2 text-xs">
                     {q.problemStatement && (
@@ -159,7 +160,7 @@ function AssessmentViewModal({ assessment, onClose }) {
                       </div>
                     )}
 
-                    <div className="p-3 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] space-y-1">
+                    <div className="p-3 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] space-y-1 overflow-x-auto">
                       <p className="text-emerald-400 font-bold">Configured Test Cases ({q.codingTestCases?.length || 0}):</p>
                       {q.codingTestCases?.map((tc, tcIdx) => (
                         <div key={tcIdx} className="border-t border-slate-800 pt-1.5 flex flex-col gap-0.5">
@@ -171,7 +172,7 @@ function AssessmentViewModal({ assessment, onClose }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-0 sm:pl-7">
                     {q.options?.map((opt, oIdx) => (
                       <div
                         key={oIdx}
@@ -196,7 +197,7 @@ function AssessmentViewModal({ assessment, onClose }) {
         <div className="flex justify-end pt-2">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-emerald-600 to-green-600 shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-green-500 transition cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-emerald-600 to-green-600 shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-green-500 transition cursor-pointer"
           >
             Close
           </button>
@@ -219,7 +220,6 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
         questionText: q.questionText || "",
         marks: q.marks || 1,
         questionType: q.questionType || initial?.type || "MCQ",
-        // Map coding specific fields
         problemStatement: q.problemStatement || "",
         inputFormat: q.inputFormat || "",
         outputFormat: q.outputFormat || "",
@@ -227,14 +227,12 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
         explanation: q.explanation || "",
         supportedLanguages: q.supportedLanguages || ["python", "javascript", "java", "cpp"],
         starterCode: q.starterCode || { java: "public class Main {}" },
-        // Map options if MCQ
         options: q.options || [
           { optionText: "", isCorrect: true },
           { optionText: "", isCorrect: false },
           { optionText: "", isCorrect: false },
           { optionText: "", isCorrect: false },
         ],
-        // Map test cases if coding (checks both testCases and codingTestCases from backend)
         testCases: (q.testCases || q.codingTestCases || []).length > 0
           ? (q.testCases || q.codingTestCases).map(tc => ({
             input: tc.input || "",
@@ -337,10 +335,10 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
 
   return (
     <div
-      className="p-6 rounded-3xl space-y-6 backdrop-blur-2xl bg-white/80 dark:bg-[#1a1e2b]/90 border border-white/40 dark:border-slate-700/60 shadow-2xl transition-all max-h-[80vh] overflow-y-auto"
+      className="p-4 sm:p-6 rounded-3xl space-y-6 backdrop-blur-2xl bg-white/80 dark:bg-[#1a1e2b]/90 border border-white/40 dark:border-slate-700/60 shadow-2xl transition-all max-h-[85vh] overflow-y-auto"
       style={{ fontFamily: "Inter, sans-serif" }}
     >
-      <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+      <h3 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
         {initial ? "Edit Assessment" : "Create New Assessment"}
       </h3>
 
@@ -411,8 +409,8 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
       </div>
 
       <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-bold uppercase tracking-wider font-mono text-slate-700 dark:text-slate-300">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider font-mono text-slate-700 dark:text-slate-300">
             Questions ({assessmentType === "MCQ" ? "Multiple Choice Options" : "Coding Problem & Test Cases"})
           </h4>
           <button
@@ -425,43 +423,47 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
         </div>
 
         {questions.map((q, qIndex) => (
-          <div key={qIndex} className="p-4 rounded-2xl bg-white/50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-slate-500">Q{qIndex + 1}</span>
-              <select
-                value={q.questionType || assessmentType}
-                onChange={(e) => handleQuestionChange(qIndex, "questionType", e.target.value)}
-                className="px-3 py-2 rounded-xl border text-xs outline-none bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer"
-              >
-                <option value="MCQ">MCQ</option>
-                <option value="CODING">CODING</option>
-              </select>
+          <div key={qIndex} className="p-3 sm:p-4 rounded-2xl bg-white/50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold text-slate-500">Q{qIndex + 1}</span>
+                <select
+                  value={q.questionType || assessmentType}
+                  onChange={(e) => handleQuestionChange(qIndex, "questionType", e.target.value)}
+                  className="px-3 py-2 rounded-xl border text-xs outline-none bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer"
+                >
+                  <option value="MCQ">MCQ</option>
+                  <option value="CODING">CODING</option>
+                </select>
+              </div>
               <input
                 value={q.questionText}
                 onChange={(e) => handleQuestionChange(qIndex, "questionText", e.target.value)}
                 placeholder="Enter question statement..."
                 className="flex-1 px-3 py-2 rounded-xl border text-xs outline-none bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
               />
-              <input
-                type="number"
-                value={q.marks}
-                onChange={(e) => handleQuestionChange(qIndex, "marks", Number(e.target.value))}
-                placeholder="Marks"
-                className="w-20 px-3 py-2 rounded-xl border text-xs outline-none bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-              />
-              {questions.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeQuestion(qIndex)}
-                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition cursor-pointer"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
+              <div className="flex items-center justify-between gap-2">
+                <input
+                  type="number"
+                  value={q.marks}
+                  onChange={(e) => handleQuestionChange(qIndex, "marks", Number(e.target.value))}
+                  placeholder="Marks"
+                  className="w-20 px-3 py-2 rounded-xl border text-xs outline-none bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+                {questions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeQuestion(qIndex)}
+                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition cursor-pointer"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {(q.questionType || assessmentType) === "CODING" ? (
-              <div className="space-y-3 pt-2 pl-4">
+              <div className="space-y-3 pt-2 pl-0 sm:pl-4">
                 <textarea
                   value={q.problemStatement || ""}
                   onChange={(e) => handleQuestionChange(qIndex, "problemStatement", e.target.value)}
@@ -528,7 +530,7 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-0 sm:pl-4">
                 {q.options?.map((opt, oIndex) => (
                   <div key={oIndex} className="flex items-center gap-2">
                     <input
@@ -553,7 +555,7 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 pt-2">
+      <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
         <button
           disabled={!title.trim() || saving}
           onClick={() => {
@@ -566,7 +568,6 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
                 difficulty: q.difficulty || "EASY",
                 marks: Number(q.marks) || 1,
                 order: Number(q.order) || 1,
-                // Include coding specific fields if it's a CODING assessment
                 ...(assessmentType === "CODING" ? {
                   problemStatement: q.problemStatement || "",
                   inputFormat: q.inputFormat || "",
@@ -601,7 +602,7 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
               questions: validQuestions,
             });
           }}
-          className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider disabled:opacity-40 flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-green-500 transition cursor-pointer"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider disabled:opacity-40 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-green-500 transition cursor-pointer"
         >
           {saving && <Loader2 size={13} className="animate-spin" />}
           Save Assessment
@@ -609,7 +610,7 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
         <button
           onClick={onCancel}
           disabled={saving}
-          className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer text-center"
         >
           Cancel
         </button>
@@ -618,9 +619,6 @@ function AssessmentForm({ initial, saving, onCancel, onSave }) {
   );
 }
 
-// Analytics View for Submissions
-// Analytics View for Submissions
-// Analytics View for Submissions
 function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [submissions, setSubmissions] = useState([]);
@@ -629,7 +627,6 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [analyticsSearchQuery, setAnalyticsSearchQuery] = useState("");
 
-  // Fetch assessment details to know total questions count
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -689,7 +686,6 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
   const submissionsByEnrollmentId = useMemo(() => {
     const map = new Map();
     submissions.forEach((sub) => {
-      // Check multiple potential keys returned by backend population
       const keys = [
         String(sub.enrollmentId ?? ""),
         String(sub.enrollment?.id ?? ""),
@@ -716,15 +712,11 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
 
   const loading = loadingEnrollments || loadingSubmissions;
 
-  // Determine total available questions for this assessment
-  const totalQuestionsCount = assessmentDetails?.questions?.length || assessmentDetails?.totalQuestions || 0;
-
   return (
     <div className="space-y-6 animate-fade-in" style={{ fontFamily: "Inter, sans-serif" }}>
-      {/* Top Header: Title, Search Input & Close Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h3 className="text-lg font-bold font-fraunces text-slate-900 dark:text-white">
+          <h3 className="text-base sm:text-lg font-bold font-fraunces text-slate-900 dark:text-white">
             Student Submission Analytics
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -733,19 +725,17 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          {/* Search Box */}
           <div className="relative w-full sm:w-64">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={analyticsSearchQuery}
               onChange={(e) => setAnalyticsSearchQuery(e.target.value)}
-              placeholder="Search by name or email..."
+              placeholder="Search student..."
               className="w-full pl-9 pr-4 py-2 rounded-xl text-xs border bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 transition"
             />
           </div>
 
-          {/* Close Icon in Top-Right Corner */}
           <button
             onClick={onBack}
             title="Close analytics"
@@ -756,23 +746,22 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
         </div>
       </div>
 
-      {/* Table Section */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="w-full text-left border-collapse text-xs min-w-[600px]">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-mono">
               <th className="py-3 px-3 w-12">#</th>
               <th className="py-3 px-4">Student Name</th>
               <th className="py-3 px-4">Email</th>
-              <th className="py-3 px-4">Marks Obtained</th>
+              <th className="py-3 px-4">Marks</th>
               <th className="py-3 px-4">Percentage</th>
-              <th className="py-3 px-4">Submission Status</th>
+              <th className="py-3 px-4">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200/50 dark:divide-slate-800/50">
             {loading ? (
               <tr>
-                <td colSpan="7" className="py-12 text-center text-slate-400">
+                <td colSpan="6" className="py-12 text-center text-slate-400">
                   <Loader2 size={18} className="animate-spin mx-auto mb-2 text-emerald-500" /> Loading analytics data…
                 </td>
               </tr>
@@ -785,12 +774,6 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
                 const sub = submissionsByEnrollmentId.get(enrollmentId);
                 const hasSubmitted = !!sub;
                 const pct = hasSubmitted && sub.percentage != null ? Number(sub.percentage) : null;
-
-                // Count how many answers the student submitted
-                const answersArray = sub?.answers || sub?.responses || sub?.submittedAnswers || [];
-                const answeredCount = hasSubmitted
-                  ? (Array.isArray(answersArray) ? answersArray.length : (sub.answeredCount ?? sub.answersCount ?? 0))
-                  : 0;
 
                 return (
                   <tr key={enrollmentId || index} className="hover:bg-black/5 dark:hover:bg-white/5 transition">
@@ -805,12 +788,9 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
                     </td>
                     <td className="py-3.5 px-4">
                       {hasSubmitted ? (
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                            <CheckCircle size={10} className="text-emerald-500" /> {sub.status || "SUBMITTED"} &
-                            {pct >= 40 ? " Passed" : " Needs Improvement"}
-                          </span>
-                        </div>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 w-max">
+                          <CheckCircle size={10} className="text-emerald-500" /> {sub.status || "SUBMITTED"} & {pct >= 40 ? "Passed" : "Improve"}
+                        </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                           Pending
@@ -822,7 +802,7 @@ function AssessmentAnalyticsView({ assessmentId, courseId, onBack }) {
               })
             ) : (
               <tr>
-                <td colSpan="7" className="py-12 text-center text-slate-400">
+                <td colSpan="6" className="py-12 text-center text-slate-400">
                   No matching student records found.
                 </td>
               </tr>
@@ -840,7 +820,6 @@ export default function AssessmentManager({ initialCourseId = null }) {
   const [courses, setCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState(initialCourseId);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const modules = useSelector(selectModules);
   const modulesLoading = useSelector(selectModulesLoading);
@@ -849,13 +828,13 @@ export default function AssessmentManager({ initialCourseId = null }) {
   const [selectedModuleId, setSelectedModuleId] = useState(null);
   const [selectedAssessmentIdForAnalytics, setSelectedAssessmentIdForAnalytics] = useState(null);
   const [viewingAssessment, setViewingAssessment] = useState(null);
+  const [mobileModulesOpen, setMobileModulesOpen] = useState(false);
 
   const selectModuleAssessments = useMemo(
     () => selectAssessmentsByModuleId(selectedModuleId),
     [selectedModuleId]
   );
   const assessments = useSelector(selectModuleAssessments);
-
   const assessmentsLoading = useSelector(selectAssessmentsLoading);
   const assessmentsError = useSelector(selectAssessmentError);
 
@@ -869,7 +848,7 @@ export default function AssessmentManager({ initialCourseId = null }) {
     (async () => {
       try {
         setCoursesLoading(true);
-        const response = await getCourses(searchQuery, 1, 50);
+        const response = await getCourses("", 1, 50);
         const payload = response?.data?.data;
         const list = Array.isArray(payload)
           ? payload
@@ -893,7 +872,7 @@ export default function AssessmentManager({ initialCourseId = null }) {
       }
     })();
     return () => { isMounted = false; };
-  }, [searchQuery]);
+  }, []);
 
   useEffect(() => {
     if (modulesError) {
@@ -981,13 +960,13 @@ export default function AssessmentManager({ initialCourseId = null }) {
         <AssessmentViewModal assessment={viewingAssessment} onClose={() => setViewingAssessment(null)} />
       )}
 
-      <div className="px-8 pt-8 pb-6 border-b border-slate-200/60 dark:border-slate-800/80 backdrop-blur-md bg-white/40 dark:bg-slate-900/40">
+      <div className="px-4 sm:px-8 pt-6 pb-6 border-b border-slate-200/60 dark:border-slate-800/80 backdrop-blur-md bg-white/40 dark:bg-slate-900/40">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-mono">
               Assessment Management Hub
             </div>
-            <h1 className="text-3xl font-black tracking-tight mt-1" style={{ fontFamily: "Fraunces, serif" }}>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-1" style={{ fontFamily: "Fraunces, serif" }}>
               {selectedCourse ? selectedCourse.title : "Select a Course"}
             </h1>
           </div>
@@ -997,7 +976,7 @@ export default function AssessmentManager({ initialCourseId = null }) {
               value={selectedCourseId ?? ""}
               onChange={(e) => setSelectedCourseId(e.target.value ? Number(e.target.value) : null)}
               disabled={coursesLoading}
-              className="w-full sm:w-56 px-4 py-2 rounded-2xl text-xs font-semibold bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 outline-none cursor-pointer backdrop-blur-md text-slate-900 dark:text-white shadow-sm transition-all"
+              className="w-full sm:w-64 px-4 py-2.5 rounded-2xl text-xs font-semibold bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 outline-none cursor-pointer backdrop-blur-md text-slate-900 dark:text-white shadow-sm transition-all"
             >
               <option value="" disabled className="bg-white dark:bg-slate-900">
                 {coursesLoading ? "Loading courses…" : "Choose a course…"}
@@ -1013,21 +992,34 @@ export default function AssessmentManager({ initialCourseId = null }) {
       </div>
 
       {!selectedCourseId ? (
-        <div className="max-w-4xl mx-auto my-16 p-12 rounded-3xl backdrop-blur-2xl bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800 shadow-2xl text-center space-y-4">
+        <div className="max-w-4xl mx-auto my-12 mx-4 sm:mx-auto p-8 sm:p-12 rounded-3xl backdrop-blur-2xl bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800 shadow-2xl text-center space-y-4">
           <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl font-bold">
             <Award size={28} />
           </div>
-          <h3 className="text-xl font-bold">No Course Selected</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+          <h3 className="text-lg sm:text-xl font-bold">No Course Selected</h3>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             Choose a course from the selector above to manage module assessments, questions, options, and student analytics.
           </p>
         </div>
       ) : (
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          
+          {/* Mobile Module Drawer Toggle */}
+          <div className="mb-4 flex lg:hidden items-center justify-between">
+            <button
+              onClick={() => setMobileModulesOpen(!mobileModulesOpen)}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md flex items-center gap-2 cursor-pointer"
+            >
+              <Menu size={15} />
+              {mobileModulesOpen ? "Hide Modules" : "Select Module"}
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            <div className="lg:col-span-4 space-y-4">
-              <div className="backdrop-blur-2xl bg-white/70 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800/80 rounded-3xl p-6 shadow-2xl">
+            {/* Modules Sidebar (4 Cols on Desktop, toggleable drawer on Mobile) */}
+            <div className={`lg:col-span-4 space-y-4 ${mobileModulesOpen ? 'block' : 'hidden lg:block'}`}>
+              <div className="backdrop-blur-2xl bg-white/70 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800/80 rounded-3xl p-4 sm:p-6 shadow-2xl">
                 <h2 className="text-xs font-bold uppercase tracking-widest font-mono text-slate-700 dark:text-slate-300 mb-4">
                   Modules (Select to view Assessments)
                 </h2>
@@ -1040,6 +1032,7 @@ export default function AssessmentManager({ initialCourseId = null }) {
                         setSelectedModuleId(m.id);
                         setSelectedAssessmentIdForAnalytics(null);
                         setViewingAssessment(null);
+                        setMobileModulesOpen(false);
                       }}
                       className={`w-full text-left p-3.5 rounded-2xl flex items-center gap-3 transition-all duration-300 backdrop-blur-md cursor-pointer ${selectedModuleId === m.id
                         ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/25 border border-white/20 font-medium"
@@ -1061,10 +1054,11 @@ export default function AssessmentManager({ initialCourseId = null }) {
               </div>
             </div>
 
+            {/* Main Assessment List & Management Area (8 Cols on Desktop) */}
             <div className="lg:col-span-8">
-              <div className="backdrop-blur-2xl bg-white/70 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800/80 rounded-3xl p-6 shadow-2xl min-h-[500px]">
+              <div className="backdrop-blur-2xl bg-white/70 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800/80 rounded-3xl p-4 sm:p-6 shadow-2xl min-h-[500px]">
                 {!selectedModuleId ? (
-                  <div className="h-64 flex flex-col items-center justify-center rounded-2xl text-center gap-2 border border-dashed border-slate-300 dark:border-slate-700 text-slate-400">
+                  <div className="h-64 flex flex-col items-center justify-center rounded-2xl text-center gap-2 border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 p-6">
                     <FileText size={24} />
                     <span className="text-xs">Select a module from the left panel to manage assessments</span>
                   </div>
@@ -1076,9 +1070,9 @@ export default function AssessmentManager({ initialCourseId = null }) {
                   />
                 ) : (
                   <>
-                    <div className="mb-6 pb-4 border-b border-slate-200/50 dark:border-slate-800/60 flex items-start justify-between">
+                    <div className="mb-6 pb-4 border-b border-slate-200/50 dark:border-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
-                        <h2 className="text-xl font-bold tracking-tight" style={{ fontFamily: "Fraunces, serif" }}>
+                        <h2 className="text-lg sm:text-xl font-bold tracking-tight" style={{ fontFamily: "Fraunces, serif" }}>
                           {selectedModule?.title} — Assessments
                         </h2>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -1087,7 +1081,7 @@ export default function AssessmentManager({ initialCourseId = null }) {
                       </div>
                       <button
                         onClick={() => setAssessmentFormMode("new")}
-                        className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-500 hover:to-green-500 transition cursor-pointer flex items-center gap-1.5"
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-500 hover:to-green-500 transition cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <Plus size={14} /> Add Assessment
                       </button>
@@ -1131,20 +1125,20 @@ export default function AssessmentManager({ initialCourseId = null }) {
                               onConfirm={() => handleDeleteAssessment(asm.id)}
                             />
                           ) : (
-                            <div className="p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-md bg-white/40 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 shadow-sm transition-all hover:bg-white/70 dark:hover:bg-slate-800/70">
+                            <div className="p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md bg-white/40 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 shadow-sm transition-all hover:bg-white/70 dark:hover:bg-slate-800/70">
                               <div className="flex items-start gap-3.5">
-                                <span className="text-xs font-mono font-bold px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
+                                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
                                   #{idx + 1}
                                 </span>
                                 <div className="space-y-1">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">{asm.title}</h4>
                                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                                       {asm.type || "MCQ"}
                                     </span>
                                   </div>
                                   {asm.description && <p className="text-xs text-slate-500">{asm.description}</p>}
-                                  <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400 pt-1">
+                                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400 pt-1">
                                     <span>Total Marks: {asm.totalMarks}</span>
                                     <span>•</span>
                                     <span>{asm.questions?.length || 0} Questions</span>
@@ -1160,19 +1154,19 @@ export default function AssessmentManager({ initialCourseId = null }) {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 self-end sm:self-center">
+                              <div className="flex flex-wrap items-center gap-2 self-end md:self-center w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-200 dark:border-slate-700">
                                 <button
                                   onClick={() => setViewingAssessment(asm)}
                                   className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition flex items-center gap-1 cursor-pointer"
                                 >
-                                  <Eye size={13} /> View Questions
+                                  <Eye size={13} /> View
                                 </button>
 
                                 <button
                                   onClick={() => setSelectedAssessmentIdForAnalytics(asm.id)}
                                   className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition flex items-center gap-1 cursor-pointer"
                                 >
-                                  <BarChart2 size={13} /> Submissions Analytics
+                                  <BarChart2 size={13} /> Analytics
                                 </button>
                                 <IconBtn title="Edit Assessment" onClick={() => setAssessmentFormMode(asm.id)}>
                                   <Pencil size={14} />

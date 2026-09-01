@@ -40,6 +40,7 @@ const certificateRoutes = require("./routes/certificateRoutes");
 const assessmentRoutes = require("./routes/assessmentRoutes");
 const codeExecutionRoutes = require("./routes/codeExecutionRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
+const studioRoutes = require("./routes/studioRoutes"); // Live Class Studio Routes
 
 const auditLogRoutes = require("./routes/auditLog");
 const analyticsRoutes = require("./routes/analytics");
@@ -83,7 +84,7 @@ const swaggerOptions = {
         info: {
             title: "Thinkz LMS API",
             version: "1.0.0",
-            description: "Course, Batch, Enrollment, Assessment, and Code Execution APIs"
+            description: "Course, Batch, Enrollment, Assessment, Code Execution, and Live Studio APIs"
         },
         servers: [
             {
@@ -123,6 +124,8 @@ app.use("/api/lesson-progress", lessonProgressRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/assessments", assessmentRoutes);
 app.use("/api/code", codeExecutionRoutes);
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/studio", studioRoutes); // Live Studio HTTP Endpoints
 app.use("/api/audit-logs", auditLogRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/notifications", notificationPreferenceRoutes);
@@ -174,6 +177,9 @@ app.use((error, req, res, next) => {
 // ============================================================
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
+
+// Initialize Real-Time Socket Handlers
+initSockets(io);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
