@@ -19,6 +19,7 @@ import StudentGradesView from "../pages/learner/StudentGradesView";
 
 // Import your newly created Code Execution Workspace page
 import CodeExecutionPage from "../pages/learner/CodePlayground/CodeExecutionPage";
+import LiveClassStudio from "../pages/liveStudio/LiveClassStudio";
 
 function LearnerRoutes() {
   return (
@@ -27,7 +28,7 @@ function LearnerRoutes() {
         <Route index element={<LearnerDashboard />} />
         <Route path="courses" element={<LearnerCoursesPage />} />
         <Route path="courses/:id/videos" element={<CoursePlayer />} />
-        
+
         <Route path="courses/:courseId/grades" element={<StudentGradesView />} />
 
         <Route path="courses/:id/courseDetails" element={<CourseDetails />} />
@@ -37,15 +38,17 @@ function LearnerRoutes() {
         <Route path="live" element={<LiveClassesListPage />} />
         <Route path="live/:classId" element={<LiveClassJoinPage />} />
         <Route path="certificates" element={<CertificatesPage />} />
-        <Route path="settings/notifications" element={<NotificationPreferencesPage />} /> 
+        <Route path="settings/notifications" element={<NotificationPreferencesPage />} />
 
         <Route path="assessments" element={<AssignmentsPage />} />
         <Route path="assessments/:assessmentId/take" element={<StudentAssessmentTaker />} />
-        
+
         {/* NEW: Code Execution / IDE workspace for coding assignments */}
         <Route path="code-execution/:assessmentId" element={<CodeExecutionPage />} />
+        <Route path="/live-studio/:sessionId" element={<LiveClassStudio />} />
+        <Route path="/live-studio" element={<LiveClassStudio />} />
       </Route>
-      
+
       <Route path="*" element={<div className="p-6 text-sm text-neutral-400">Page not found.</div>} />
     </Routes>
   );

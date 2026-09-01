@@ -4,36 +4,48 @@ const { roleSatisfies } = require("../config/roleHierarchy"); // Ensure this fil
 function requireRole(allowedRoles) {
   return (req, res, next) => {
     const authHeader = req.headers.authorization;
+    const demoRole = req.headers["x-demo-role"];
+    const demoUserId = req.headers["x-demo-user-id"];
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    let userRole = null;
+
+    // 1. Check for standard Bearer JWT Token
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Attach decoded user info (id, email, role)
+        userRole = req.user.role;
+      } catch (error) {
+        return res.status(401).json({ success: false, message: "Invalid or expired token" });
+      }
+    } 
+    // 2. Fallback to Dev/Demo Mode Headers (matching socket middleware pattern)
+    else if (demoRole) {
+      req.user = {
+        id: demoUserId || "demo-user-1",
+        role: demoRole
+      };
+      userRole = demoRole;
+    } 
+    // 3. No authentication method found
+    else {
       return res.status(401).json({
         success: false,
-        message: "Authentication required: No token provided"
+        message: "Authentication required: No token or demo role provided"
       });
     }
 
-    const token = authHeader.split(" ")[1];
+    // Check role permissions using roleHierarchy config or simple array check
+    const hasPermission = typeof roleSatisfies === 'function' 
+      ? roleSatisfies(userRole, allowedRoles) 
+      : allowedRoles.includes(userRole);
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded; // Attach user info (id, email, role) to request
-
-      // Check role permissions
-      const userRole = req.user.role;
-      
-      // If roleSatisfies exists use it, otherwise simple array check: allowedRoles.includes(userRole)
-      const hasPermission = typeof roleSatisfies === 'function' 
-        ? roleSatisfies(userRole, allowedRoles) 
-        : allowedRoles.includes(userRole);
-
-      if (!hasPermission) {
-        return res.status(403).json({ success: false, message: "Forbidden: insufficient role" });
-      }
-
-      next();
-    } catch (error) {
-      return res.status(401).json({ success: false, message: "Invalid or expired token" });
+    if (!hasPermission) {
+      return res.status(403).json({ success: false, message: "Forbidden: insufficient role" });
     }
+
+    next();
   };
 }
 

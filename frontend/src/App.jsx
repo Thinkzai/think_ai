@@ -12,11 +12,12 @@ import LandingPage from "./pages/public/Landingpage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import LearnerRoutes from "./routes/LearnerRoutes";
 import AdminRoutes from "./routes/AdminRoutes";
-import InstructorRoutes from "./routes/InstructorRoutes"; 
+import InstructorRoutes from "./routes/InstructorRoutes";
 import { fetchCurrentUser } from "./features/auth/authSlice";
-import useSessionTimeout from "./hooks/useSessionTimeout"; 
+import useSessionTimeout from "./hooks/useSessionTimeout";
 
 import ForumModuleRoutes from "./routes/ForumModuleRoutes";
+import LiveClassStudio from "./pages/liveStudio/LiveClassStudio";
 
 function RolePlaceholder({ label }) {
   return (
@@ -31,7 +32,7 @@ function RolePlaceholder({ label }) {
 function App() {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
-  
+
   // Automatically check token expiry state
   useSessionTimeout();
 
@@ -148,7 +149,13 @@ function App() {
           path="*"
           element={<Navigate to="/login" replace />}
         />
-
+        <Route path="/live-studio/:sessionId?"
+          element={
+            <ProtectedRoute allowedRoles={["Instructor", "Admin", "Learner"]}>
+              <LiveClassStudio />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </ThemeProvider>
   );
