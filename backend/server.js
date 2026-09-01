@@ -12,6 +12,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 
 const { startWorker } = require("./services/notificationQueueService");
 const initSockets = require("./sockets/index");
+const initLiveSocket = require("./src/live/liveSocket");
 
 require("./config/db");
 
@@ -25,6 +26,14 @@ const courseRoutes = require("./routes/courseRoutes");
 const batchRoutes = require("./routes/batchRoutes");
 const enrollmentRoutes = require("./routes/enrollmentRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
+const enrollmentRoutes = require("./routes/enrollmentRoutes");   // <-- added
+const lessonRoutes = require("./routes/lessonRoutes");           // <-- added
+const adminUsersRoutes = require("./routes/adminUsers");
+const auditLogRoutes = require("./routes/auditLog");
+const notificationPreferenceRoutes = require("./routes/notificationPreferences");
+const assessmentRoutes = require("./routes/assessmentRoutes");
+// ...also add these if you need them and they're missing here too:
+const certificateRoutes = require("./routes/certificateRoutes");
 const lessonRoutes = require("./routes/lessonRoutes");
 const lessonProgressRoutes = require("./routes/lessonProgressRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
@@ -127,6 +136,16 @@ app.use(
     express.static(path.join(__dirname, "generated/certificates"))
 );
 
+// Forum module (self-contained: discussions, comments, categories, bookmarks,
+// notifications, moderation, live studio). Mounted last on purpose so it can
+// never shadow the routes above.
+app.use("/api", require("./src/routes"));
+
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, { cors: { origin: "*" } });
+app.set("io", io);
+initSockets(io);
+initLiveSocket(io);
 // ============================================================
 // 404 HANDLER
 // ============================================================
