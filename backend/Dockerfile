@@ -1,16 +1,29 @@
-FROM node:22-alpine AS dependencies
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json package-lock.json ./
 
-RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund \
-    && npm cache clean --force \
-    && rm -rf /root/.npm /tmp/*
+RUN npm ci \
+    --legacy-peer-deps \
+    --no-audit \
+    --no-fund
 
 COPY prisma ./prisma
 
-RUN npx prisma generate \
+RUN npx prisma generate
+
+FROM node:22-alpine AS production-dependencies
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm ci \
+    --omit=dev \
+    --legacy-peer-deps \
+    --no-audit \
+    --no-fund \
     && npm cache clean --force \
     && rm -rf /root/.npm /tmp/*
 
@@ -20,8 +33,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=dependencies /app/node_modules ./node_modules
-
+COPY --from=production-dependencies /app/node_modules ./node_modules
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY . .
 
 EXPOSE 5000
