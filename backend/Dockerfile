@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY prisma ./prisma
 
 RUN npx prisma generate
 
-FROM node:22-alpine AS production-dependencies
+FROM node:20-alpine AS production-dependencies
 
 WORKDIR /app
 
@@ -27,16 +27,19 @@ RUN npm ci \
     && npm cache clean --force \
     && rm -rf /root/.npm /tmp/*
 
-FROM node:22-alpine AS runtime
+FROM node:20-alpine AS runtime
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=production-dependencies /app/node_modules ./node_modules
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY . .
+COPY --chown=1001:1001 --from=production-dependencies /app/node_modules ./node_modules
+COPY --chown=1001:1001 --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --chown=1001:1001 . .
 
+RUN addgroup -S -g 1001 appgroup
+RUN adduser -S -D -u 1001 -G appgroup appuser
+USER appuser
 EXPOSE 5000
 
 CMD ["node", "server.js"]
