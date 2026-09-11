@@ -8,6 +8,8 @@ TIMESTAMP="$(date -u +%Y-%m-%d_%H-%M-%S)"
 BACKUP_NAME="thinkz_ai_${TIMESTAMP}.dump"
 FINAL_BACKUP="${BACKUP_DIR}/${BACKUP_NAME}"
 TEMP_BACKUP="${FINAL_BACKUP}.tmp"
+S3_BUCKET="thinkz-ai-rk-backups-114757333589"
+S3_PREFIX="postgresql-backups"
 
 cleanup() {
     rm -f "$TEMP_BACKUP"
@@ -48,6 +50,9 @@ mv "$TEMP_BACKUP" "$FINAL_BACKUP"
     cd "$BACKUP_DIR"
     sha256sum "$BACKUP_NAME" > "${BACKUP_NAME}.sha256"
 )
+
+aws s3 cp "$FINAL_BACKUP" "s3://${S3_BUCKET}/${S3_PREFIX}/${BACKUP_NAME}" --sse AES256
+aws s3 cp "${FINAL_BACKUP}.sha256" "s3://${S3_BUCKET}/${S3_PREFIX}/${BACKUP_NAME}.sha256" --sse AES256
 
 find "$BACKUP_DIR" \
     -type f \
