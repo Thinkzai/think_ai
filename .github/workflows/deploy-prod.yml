@@ -15,6 +15,7 @@ env:
   AWS_ACCOUNT_ID: "114757333589"
   BACKEND_REPOSITORY: thinkz-ai-backend
   FRONTEND_REPOSITORY: thinkz-ai-frontend
+  EC2_INSTANCE_ID: i-02fe2f396176b851a
 
 jobs:
   build-and-push:
@@ -56,3 +57,32 @@ jobs:
             ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.FRONTEND_REPOSITORY }}:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Deploy to EC2 through SSM
+        run: |
+          COMMAND_ID="$(aws ssm send-command \
+            --region "$AWS_REGION" \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy ThinkzAI commit $GITHUB_SHA" \
+            --parameters "commands=[\"sudo /opt/thinkz-ai/scripts/deploy-ecr.sh $GITHUB_SHA\"]" \
+            --query "Command.CommandId" \
+            --output text)"
+
+          echo "SSM command ID: $COMMAND_ID"
+
+          set +e
+          aws ssm wait command-executed \
+            --region "$AWS_REGION" \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID"
+          WAIT_STATUS=$?
+          set -e
+
+          aws ssm get-command-invocation \
+            --region "$AWS_REGION" \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}'
+
+          exit "$WAIT_STATUS"
