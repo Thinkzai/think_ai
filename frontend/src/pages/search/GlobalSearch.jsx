@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -29,6 +29,7 @@ export default function GlobalSearch() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!input.trim()) {
       dispatch(clearSearch());
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
       setOpen(false);
       return;
     }

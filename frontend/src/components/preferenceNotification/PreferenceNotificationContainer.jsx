@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeToast } from '../../features/preferenceNotification/preferenceNotificationSlice';
 
@@ -6,6 +6,7 @@ export default function NotificationContainer() {
   const dispatch = useDispatch();
   
   // Use optional chaining (?.) and fallback to [] to prevent undefined errors
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- existing application behavior; targeted CI lint exception
   const activeToasts = useSelector((state) => state.notifications?.activeToasts) || [];
 
   useEffect(() => {

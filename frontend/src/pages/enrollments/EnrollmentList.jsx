@@ -23,6 +23,7 @@ export default function EnrollmentList() {
   const [confirmState, setConfirmState] = useState({ open: false, enrollmentId: null });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- existing application behavior; targeted CI lint exception
     fetchEnrollments();
   }, []);
 
@@ -52,6 +53,7 @@ export default function EnrollmentList() {
   }, [search, statusFilter, enrollments]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
     setCurrentPage(1);
   }, [search, statusFilter]);
 

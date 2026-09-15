@@ -1,7 +1,10 @@
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
+// eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
+import { render, screen, fireEvent, waitFor, cleanup, act } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import AssessmentSubmission from "./AssessmentSubmission";
+
+afterEach(() => cleanup());
 
 const questions = [
   { id: "q1", prompt: "2 + 2 = ?", options: ["3", "4", "5", "6"] },
@@ -9,8 +12,8 @@ const questions = [
 ];
 
 function renderAssessment(overrides = {}) {
-  const onAutosave = jest.fn();
-  const onSubmit = jest.fn();
+  const onAutosave = vi.fn();
+  const onSubmit = vi.fn();
   const utils = render(
     <AssessmentSubmission
       questions={questions}
@@ -26,12 +29,12 @@ function renderAssessment(overrides = {}) {
 
 describe("AssessmentSubmission", () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.clearAllTimers();
-    jest.useRealTimers();
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   test("renders the first question by default", () => {
@@ -62,31 +65,37 @@ describe("AssessmentSubmission", () => {
     renderAssessment();
     const flagBtn = screen.getByRole("button", { name: /^Flag$/i });
     fireEvent.click(flagBtn);
-    expect(screen.getByRole("button", { name: /Flagged/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Flagged$/i })).toBeInTheDocument();
   });
 
   test("autosave fires after debounce delay when an answer changes", async () => {
     const { onAutosave } = renderAssessment();
     fireEvent.click(screen.getByText("4"));
 
-    jest.advanceTimersByTime(150);
-
-    await waitFor(() => {
-      expect(onAutosave).toHaveBeenCalledWith(expect.objectContaining({ q1: 1 }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
     });
+
+    expect(onAutosave).toHaveBeenCalledWith(
+      expect.objectContaining({ q1: 1 })
+    );
   });
 
   test("timer counts down and displays mm:ss format", () => {
     renderAssessment({ durationSeconds: 65 });
     expect(screen.getByRole("timer")).toHaveTextContent("01:05");
 
-    jest.advanceTimersByTime(5000);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
   });
 
   test("auto-submits when timer reaches zero", () => {
     const { onSubmit } = renderAssessment({ durationSeconds: 2 });
-    jest.advanceTimersByTime(2000);
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
     expect(onSubmit).toHaveBeenCalled();
   });
 

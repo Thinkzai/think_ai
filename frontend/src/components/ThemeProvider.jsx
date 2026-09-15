@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-const ThemeContext = createContext();
+import { useEffect, useState } from 'react';
+import { ThemeContext } from './ThemeContext';
 
 export function ThemeProvider({ children }) {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -8,6 +7,7 @@ export function ThemeProvider({ children }) {
   // Sync with HTML root class for Tailwind `dark:` classes
   useEffect(() => {
     const root = document.documentElement;
+
     if (isDarkMode) {
       root.classList.add('dark');
     } else {
@@ -22,8 +22,4 @@ export function ThemeProvider({ children }) {
       {children}
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme() {
-  return useContext(ThemeContext);
 }

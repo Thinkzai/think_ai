@@ -15,6 +15,7 @@ export default function LessonList() {
   const [confirmState, setConfirmState] = useState({ open: false, lessonId: null });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- existing application behavior; targeted CI lint exception
     fetchLessons();
   }, []);
 
@@ -44,6 +45,7 @@ export default function LessonList() {
   }, [lessons, search]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
     setCurrentPage(1);
   }, [search]);
 

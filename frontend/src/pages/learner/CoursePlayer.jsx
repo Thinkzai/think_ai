@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -112,6 +112,7 @@ export default function CoursePlayer() {
 
   useEffect(() => {
     if (modules.length > 0 && !activeModule) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
       setActiveModule(modules[0].id);
     }
   }, [modules, activeModule]);

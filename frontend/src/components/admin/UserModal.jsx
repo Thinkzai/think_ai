@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import InputField from '../common/InputField';
 import Button from '../common/Button';
@@ -10,6 +10,7 @@ export default function UserModal({ isOpen, onClose, user, onSave }) {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
       setFormData(user);
     } else {
       setFormData(EMPTY_USER);

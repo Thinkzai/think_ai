@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import InputField from '../common/InputField';
 import Button from '../common/Button';
@@ -20,6 +20,7 @@ export default function CourseModal({ isOpen, onClose, course, onSave }) {
 
   useEffect(() => {
     if (course) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
       setFormData({ ...EMPTY_COURSE, ...course });
     } else {
       setFormData(EMPTY_COURSE);

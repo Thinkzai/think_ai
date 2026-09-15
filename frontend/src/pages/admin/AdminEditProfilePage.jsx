@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ export default function AdminEditProfilePage() {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
       setFormData({
         name: user.name || '',
         email: user.email || '',

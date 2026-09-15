@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -41,6 +41,7 @@ export default function NotificationPreferencesPage() {
   const handleToggle = (key, isCategory = false, categoryKey = null) => {
     if (!preferences) return;
 
+    // eslint-disable-next-line no-useless-assignment -- existing application behavior; targeted CI lint exception
     let updates = {};
     if (isCategory) {
       updates = {

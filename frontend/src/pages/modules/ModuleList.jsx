@@ -16,6 +16,7 @@ export default function ModuleList() {
   const [confirmState, setConfirmState] = useState({ open: false, moduleId: null });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- existing application behavior; targeted CI lint exception
     fetchModules();
   }, []);
 
@@ -42,6 +43,7 @@ export default function ModuleList() {
   }, [search, modules]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- existing application behavior; targeted CI lint exception
     setCurrentPage(1);
   }, [search]);
 

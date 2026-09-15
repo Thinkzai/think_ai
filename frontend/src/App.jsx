@@ -1,14 +1,14 @@
-import React, { useEffect } from "react";
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from "react-redux";
+import { fetchCurrentUser } from "./features/auth/authSlice";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { ThemeProvider } from "./components/ThemeContext";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import LandingPage from "./pages/public/Landingpage";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
-import AppRoutes from "./routes/AppRoutes";
 import LearnerRoutes from "./routes/LearnerRoutes";
 import AdminRoutes from "./routes/AdminRoutes";
 

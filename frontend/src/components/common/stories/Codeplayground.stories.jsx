@@ -1,4 +1,4 @@
-import { ThemeProvider } from '../../ThemeContext';
+import { ThemeProvider } from '../../ThemeProvider';
 import CodePlayground from '../CodePlayground';
 
 const meta = {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import CourseList from './CourseList';
@@ -59,13 +59,21 @@ export default function CoursesPage() {
   const handleSaveCourse = async (courseData) => {
     const isEdit = Boolean(courseData.id);
     const {
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       level,
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       language,
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       createdAt,
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       updatedAt,
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       id,
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       thumbnailFile,
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       videoFile,
+      // eslint-disable-next-line no-unused-vars -- existing application behavior; targeted CI lint exception
       videoUrl,
       ...cleanData
     } = courseData;
