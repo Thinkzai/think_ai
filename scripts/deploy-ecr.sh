@@ -45,13 +45,58 @@ for attempt in $(seq 1 12); do
   BACKEND_HEALTH="$(docker inspect thinkz_backend --format '{{.State.Health.Status}}')"
   FRONTEND_HEALTH="$(docker inspect thinkz_frontend --format '{{.State.Health.Status}}')"
 
+  POSTGRES_HEALTH="$(docker inspect thinkz_postgres --format '{{.State.Health.Status}}')"
+
   if [ "$BACKEND_HEALTH" = "healthy" ] &&
      [ "$FRONTEND_HEALTH" = "healthy" ] &&
+     [ "$POSTGRES_HEALTH" = "healthy" ] &&
      curl -fsS http://localhost/ > /dev/null &&
+     curl -fsS http://localhost/health > /dev/null &&
      curl -fsS http://localhost/api/courses > /dev/null; then
-    trap - ERR
-    echo "DEPLOYMENT_SUCCESS: $TAG"
-    exit 0
+
+    echo "HTTP and database smoke checks passed."
+
+    if docker exec thinkz_backend node - <<'NODE'
+const { io } = require("socket.io-client");
+
+const socket = io("http://frontend", {
+  path: "/socket.io",
+  transports: ["websocket"],
+  extraHeaders: {
+    "x-demo-role": "admin",
+    "x-demo-user-id": "deployment-smoke-test"
+  },
+  timeout: 5000,
+  reconnection: false
+});
+
+const timer = setTimeout(() => {
+  console.error("WebSocket smoke test timed out");
+  socket.close();
+  process.exit(1);
+}, 7000);
+
+socket.on("connect", () => {
+  console.log("WebSocket smoke test passed");
+  clearTimeout(timer);
+  socket.close();
+  process.exit(0);
+});
+
+socket.on("connect_error", (err) => {
+  console.error("WebSocket smoke test failed:", err.message);
+  clearTimeout(timer);
+  socket.close();
+  process.exit(1);
+});
+NODE
+    then
+      trap - ERR
+      echo "DEPLOYMENT_SUCCESS: $TAG"
+      exit 0
+    fi
+
+    echo "WebSocket smoke verification failed."
   fi
 
   echo "Waiting for services: attempt ${attempt}/12"

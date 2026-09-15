@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - thinkz-ai-ec2-deployment
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: read
@@ -18,7 +20,37 @@ env:
   EC2_INSTANCE_ID: i-02fe2f396176b851a
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Frontend lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Frontend build
+        working-directory: frontend
+        run: npm run build
+
   build-and-push:
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
