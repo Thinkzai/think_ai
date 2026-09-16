@@ -7,84 +7,108 @@
 - Environment: AWS production
 - Region: ap-south-2
 
-## DevOps Verification
+## Infrastructure Verification
 
 | Check | Result |
 |---|---|
-| Backend container healthy | Passed |
-| Frontend container healthy | Passed |
-| PostgreSQL container healthy | Passed |
-| Website response | HTTP 200 |
-| API `/api/courses` response | HTTP 200 |
-| GitHub Actions deployment | Passed |
-| Amazon ECR image deployment | Passed |
-| AWS SSM deployment | Passed |
-| Controlled rollback | Passed |
-| Latest release restoration | Passed |
-| PostgreSQL backup creation | Passed |
-| S3 encrypted upload | Passed |
-| Isolated database restore | Passed |
-| Public SSH removal | Passed |
+| Backend container | Healthy |
+| Frontend container | Healthy |
+| PostgreSQL container | Healthy |
+| Website | HTTP 200 |
+| API `/api/courses` | HTTP 200 |
+| Nginx `/health` | HTTP 200 |
+| Socket.IO through Nginx | Passed |
+| PostgreSQL backup checksum | Passed |
+| Backup readability | Passed |
+| Historical isolated restore | Passed |
+| SNS email subscription | Confirmed |
+| CloudWatch alarm SNS integration | Verified |
+
+## Database Content Verification
+
+Current deployed application-table counts:
+
+- AuditLog: 0
+- Batch: 0
+- Course: 0
+- Enrollment: 0
+- _prisma_migrations: 3
+
+No application data currently exists in the deployed application tables.
+
+This means no test/demo application rows were found in those tables, but it also means there is no real application content available to validate.
+
+## S3 Production Media Verification
+
+Bucket: `client-learning-media-prod`
+
+- Bucket exists.
+- Versioning enabled.
+- Lifecycle transition to STANDARD_IA after 90 days configured.
+- Current object listing: Empty.
+- Test/mock media found: None.
+- Real client media available for checksum verification: None.
+
+Real-media checksum/manifest validation is therefore not applicable yet.
 
 ## Database Protection
 
 - Database: PostgreSQL 16 Alpine in Docker
-- Daily backup time: 02:00 UTC
-- S3 bucket: `thinkz-ai-rk-backups-114757333589`
-- S3 prefix: `postgresql-backups/`
-- S3 versioning: Enabled
-- Encryption: AES256
-- Current backup retention: 90 days
-- Noncurrent version retention: 30 days
-- Restore test result: Five public tables restored successfully
-- Restore-test database: Removed after verification
+- Backup schedule: Daily at 02:00 UTC
+- Backup bucket: `thinkz-ai-rk-backups-114757333589`
+- Prefix: `postgresql-backups/`
+- Versioning: Enabled
+- Backup checksum validation: Passed
+- pg_restore readability: Passed
+- Historical isolated restore: Passed
 
-## Production Image Evidence
+## Application Data Responsibility
 
-Verified production commit:
+DevOps has verified the currently deployed database and S3 state.
 
-```text
-18af234ed1888052f09a1fd17c26d112ccb101a5
-```
+The following requirements require application/developer/client confirmation when real data is introduced:
 
-Both backend and frontend were deployed using this commit image and returned healthy status with HTTP 200 responses.
+- Approved production users
+- Approved courses and assessments
+- Approved forum content
+- Approved discount codes
+- Client-provided media and manifest/checksums
+- Intended production environment/application configuration
 
-## Application Data Verification Responsibility
+## Excluded Scope
 
-The DevOps checks confirm database availability, backup integrity and restoration capability. The following content checks require confirmation from the application developers or client data owner:
-
-- No mock or test users
-- No sample courses or assessments
-- Only approved forum content
-- Only approved discount codes
-- Only client-provided media
-- Production environment values supplied by the client
-
-These items must not be marked as passed until the responsible developer or client confirms them.
-
-## Excluded External Dependencies
-
-- Domain, DNS, ACM certificate and trusted HTTPS are pending because domain details were not provided.
-- Amazon RDS is not implemented because architecture and budget approval were not provided.
+Domain/DNS/ACM/Elastic-IP cutover work and Amazon RDS migration were intentionally excluded from the current walkthrough.
 
 ## Sign-off Status
 
-- DevOps infrastructure readiness: Verified
-- CI/CD readiness: Verified
-- Backup and restore readiness: Verified
-- Security administration readiness: Verified
-- Application real-data validation: Pending developer or client confirmation
-- Domain-dependent configuration: Pending external input
-- RDS migration: Pending approval, if required
+- Infrastructure verification: Verified
+- Current database state: Verified
+- Current S3 state: Verified
+- Mock/test application rows in existing tables: None found
+- Mock/test objects in production-media bucket: None found
+- Real production content validation: Not applicable/currently unavailable
+- Application data-owner confirmation: Pending
+- Team lead approval: Pending
 
 ## Final Statement
 
-All approved and domain-independent DevOps controls are implemented and verified. Final confirmation that production contains zero mock or test content must be provided by the application team or client data owner.
+The currently deployed application tables and production-media bucket contain no application content. This is a verified empty state, not evidence that real client production content has been validated.
 
-## Approval
+## Blue-Green Infrastructure Verification - 16 September 2026
 
-- Prepared by: RK Reddy
-- DevOps status: Verified
-- Application data owner: Pending confirmation
-- Team lead approval: Pending
-- Client review: Pending
+Backend Blue-Green production switching and rollback have been technically verified.
+
+- Blue -> Green switch: Passed.
+- Green -> Blue rollback: Passed.
+- Switch monitoring: 80 samples, 0 failures.
+- Rollback monitoring: 80 samples, 0 failures.
+- Website: HTTP 200.
+- API: HTTP 200.
+- Socket.IO: Passed.
+- Container restart counts: 0.
+- Current backend upstream: Green.
+- Blue backend retained for rollback.
+
+This infrastructure verification does not change the production-data status.
+
+Real client application data and client media are still unavailable for final content verification. Application data-owner confirmation and team-lead sign-off therefore remain pending.

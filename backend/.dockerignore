@@ -5,3 +5,14 @@ npm-debug.log
 .gitignore
 tests
 *.log
+
+# Production image exclusions
+structure.txt
+*.before-*
+*.bak
+*.backup
+coverage
+coverage/
+docs
+docs/
+*.md

@@ -119,3 +119,106 @@ Escalate to the team lead when:
 - Backup upload: Passed
 - Backup restore: Passed
 - SSM administration: Passed
+
+
+## Day-14 Monitoring Final Update
+
+Final monitoring verification completed on 15 September 2026:
+
+- CloudWatch dashboard: ThinkzAI-Infrastructure.
+- CloudWatch Agent: Enabled and active.
+- Backend/frontend CloudWatch logging: Configured.
+- Log retention: 30 days.
+- EC2 CPU alarm: Configured and OK.
+- EC2 memory alarm: Configured and OK.
+- EC2 status-check alarm: Configured and OK.
+- Backend 5xx alarm: Configured and OK.
+- SNS topic: ThinkzAI-Infrastructure-Alerts.
+- SNS email subscription: Confirmed.
+
+Verified alarms connected to SNS:
+
+- ThinkzAI-Backend-5xx-Errors
+- ThinkzAI-EC2-High-CPU
+- ThinkzAI-EC2-High-Memory
+- ThinkzAI-EC2-Status-Failed
+
+### Application Health
+
+- Frontend: Healthy.
+- Backend: Healthy.
+- PostgreSQL: Healthy.
+- Website: HTTP 200.
+- API: HTTP 200.
+- Nginx health endpoint: HTTP 200.
+- Socket.IO through frontend Nginx: Passed.
+- Backend RestartCount: 0.
+
+### Production Media
+
+S3 bucket `client-learning-media-prod`:
+
+- Versioning: Enabled.
+- Lifecycle transition to STANDARD_IA after 90 days: Configured.
+- Current object state: Empty.
+
+No test/mock media objects were found, but no real client media currently exists
+for checksum/manifest validation.
+
+### Security Note
+
+Do not print production secrets using unfiltered configuration commands.
+
+A second controlled credential rotation was completed successfully on 15 September 2026 after the earlier configuration exposure. The PostgreSQL application password and JWT secret were rotated without displaying the replacement values.
+
+Do not perform production Prisma schema changes without developer/application-owner
+approval.
+
+## Blue-Green Deployment and Rollback Verification - 16 September 2026
+
+Production backend traffic switching was tested using Nginx upstream reloads.
+
+### Verified Switch
+
+Blue -> Green:
+
+- Website remained HTTP 200.
+- API remained HTTP 200.
+- Socket.IO handshake passed.
+- Continuous monitor: 80 samples.
+- Failed/non-200 samples: 0.
+- Production frontend was not restarted.
+
+### Verified Rollback
+
+Green -> Blue:
+
+- Website remained HTTP 200.
+- API remained HTTP 200.
+- Socket.IO handshake passed.
+- Continuous monitor: 80 samples.
+- Failed/non-200 samples: 0.
+- Container restart counts remained 0.
+
+### Rollback Procedure
+
+Before rollback:
+
+1. Confirm the Blue backend is running.
+2. Verify the Blue backend API responds successfully.
+3. Validate the saved Blue Nginx configuration.
+4. Reload Nginx rather than restarting the production frontend.
+5. Verify website, API and Socket.IO after rollback.
+6. Keep both environments until post-deployment verification is complete.
+
+Blue rollback configuration:
+
+`/opt/thinkz-ai-bluegreen/production-blue-rollback.conf`
+
+Green upstream configuration:
+
+`/opt/thinkz-ai-bluegreen/production-green-upstream.conf`
+
+Switch and rollback evidence is stored under:
+
+`/opt/thinkz-ai-bluegreen/`
