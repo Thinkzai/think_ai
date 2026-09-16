@@ -18,29 +18,29 @@ function EditCourse() {
   });
 
   useEffect(() => {
+    const loadCourse = async () => {
+      try {
+        const response = await getCourseById(id);
+
+        const data = response.data.data;
+
+        setCourse({
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          price: data.price,
+          duration: data.duration,
+          thumbnail: data.thumbnail,
+          status: data.status,
+        });
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load course");
+      }
+    };
+
     loadCourse();
-  }, []);
-
-  const loadCourse = async () => {
-    try {
-      const response = await getCourseById(id);
-
-      const data = response.data.data;
-
-      setCourse({
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        price: data.price,
-        duration: data.duration,
-        thumbnail: data.thumbnail,
-        status: data.status,
-      });
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load course");
-    }
-  };
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

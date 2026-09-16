@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
+import { FaBook, FaUsers, FaUserGraduate } from "react-icons/fa";
 
 import { getCourses } from "../api/courseApi";
 import { getBatches } from "../api/batchApi";
@@ -14,27 +14,27 @@ function Dashboard() {
   });
 
   useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const [coursesRes, batchesRes, enrollmentsRes] =
+          await Promise.all([
+            getCourses(),
+            getBatches(),
+            getEnrollments(),
+          ]);
+
+        setStats({
+          courses: coursesRes.data.data.length,
+          batches: batchesRes.data.data.length,
+          enrollments: enrollmentsRes.data.data.length,
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
     loadDashboard();
   }, []);
-
-  const loadDashboard = async () => {
-    try {
-      const [coursesRes, batchesRes, enrollmentsRes] =
-        await Promise.all([
-          getCourses(),
-          getBatches(),
-          getEnrollments(),
-        ]);
-
-      setStats({
-        courses: coursesRes.data.data.length,
-        batches: batchesRes.data.data.length,
-        enrollments: enrollmentsRes.data.data.length,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto">

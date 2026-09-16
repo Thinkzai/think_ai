@@ -13,7 +13,8 @@ export const loginApi = (credentials) => {
         (u) => u.email === credentials.email && u.password === credentials.password
       )
       if (match) {
-        const { password, ...user } = match
+        const user = { ...match };
+          delete user.password
         resolve({ data: { token: 'mock-jwt-token-' + user.role, user } })
       } else {
         reject({ response: { data: { message: 'Invalid email or password' } } })
@@ -38,7 +39,8 @@ export const registerApi = (formData) => {
         role: 'Learner',
       }
       MOCK_USERS = [...MOCK_USERS, newUser]
-      const { password, ...user } = newUser
+      const user = { ...newUser };
+        delete user.password
       resolve({ data: { token: 'mock-jwt-token-' + user.role, user } })
     }, 500)
   })
@@ -53,7 +55,8 @@ export const updateProfileApi = (userId, updates) => {
         return
       }
       MOCK_USERS[index] = { ...MOCK_USERS[index], ...updates }
-      const { password, ...user } = MOCK_USERS[index]
+      const user = { ...MOCK_USERS[index] };
+        delete user.password
       resolve({ data: { user } })
     }, 500)
   })

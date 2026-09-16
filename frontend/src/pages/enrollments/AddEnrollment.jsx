@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
 import { createEnrollment } from "../../api/enrollmentApi";
 import { getBatches } from "../../api/batchApi";
-import { selectUser } from "../../features/auth/authSlice";
 import InputField from "../../components/common/InputField";
 
 function AddEnrollment() {
   const navigate = useNavigate();
-  const user = useSelector(selectUser);
 
   const [batches, setBatches] = useState([]);
   const [loadingBatches, setLoadingBatches] = useState(true);
@@ -23,21 +20,20 @@ function AddEnrollment() {
   });
 
   useEffect(() => {
+    const loadBatches = async () => {
+      try {
+        const response = await getBatches();
+        setBatches(response.data.data || []);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load batches");
+      } finally {
+        setLoadingBatches(false);
+      }
+    };
+
     loadBatches();
   }, []);
-
-  const loadBatches = async () => {
-    try {
-      setLoadingBatches(true);
-      const response = await getBatches();
-      setBatches(response.data.data || []);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load batches");
-    } finally {
-      setLoadingBatches(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;

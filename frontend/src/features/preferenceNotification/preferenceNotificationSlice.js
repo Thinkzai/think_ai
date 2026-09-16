@@ -5,7 +5,7 @@ export const fetchPreferences = createAsyncThunk(
   'notifications/fetchPreferences',
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await notificationApi.getPreferences(userId);
+      const response = await notificationsApi.getPreferences(userId);
       return response.data?.data || response.data || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch preferences');
@@ -17,7 +17,7 @@ export const updatePreferences = createAsyncThunk(
   'notifications/updatePreferences',
   async ({ userId, updates }, { rejectWithValue }) => {
     try {
-      const response = await notificationApi.updatePreferences(userId, updates);
+      const response = await notificationsApi.updatePreferences(userId, updates);
       return response.data?.data || response.data || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update preferences');
@@ -29,7 +29,7 @@ export const fetchQueueStatus = createAsyncThunk(
   'notifications/fetchQueueStatus',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await notificationApi.getQueueStatus();
+      const response = await notificationsApi.getQueueStatus();
       return response.data?.data || response.data || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch queue status');
@@ -76,7 +76,7 @@ const notificationSlice = createSlice({
         state.unreadCount = Math.max(0, state.unreadCount - 1);
       }
     },
-    loadNotifications: (state) => {
+    loadNotifications: () => {
       // Local sync trigger if needed
     }
   },

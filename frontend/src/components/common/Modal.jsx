@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-
+import { useEffect } from 'react';
 export default function Modal({ isOpen, onClose, title, children }) {
   useEffect(() => {
     if (isOpen) {

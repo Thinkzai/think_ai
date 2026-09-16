@@ -20,18 +20,18 @@ function AddBatch() {
   });
 
   useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const response = await getCourses();
+        setCourses(response.data.data || []);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load courses");
+      }
+    };
+
     loadCourses();
   }, []);
-
-  const loadCourses = async () => {
-    try {
-      const response = await getCourses();
-      setCourses(response.data.data || []);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load courses");
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;

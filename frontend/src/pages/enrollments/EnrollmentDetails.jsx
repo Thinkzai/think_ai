@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getEnrollmentById } from "../../api/enrollmentApi";
 import {
@@ -15,8 +15,6 @@ import { DetailsSkeleton } from "../../components/common/LoadingSkeleton";
 
 function EnrollmentDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
-
   const [enrollment, setEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,57 +27,52 @@ function EnrollmentDetails() {
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
+    const loadEnrollment = async () => {
+      try {
+        const response = await getEnrollmentById(id);
+        setEnrollment(response.data.data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load enrollment");
+        setEnrollment(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const loadProgress = async () => {
+      try {
+        const [progressRes, summaryRes] = await Promise.all([
+          getProgressByEnrollment(id),
+          getProgressSummary(id),
+        ]);
+        setProgress(progressRes.data.data || []);
+        setSummary(summaryRes.data.data || null);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+
+    const loadCertificate = async () => {
+      try {
+        const response = await getCertificateByEnrollment(id);
+        setCertificate(response.data.data || null);
+      } catch (error) {
+        if (error.response?.status !== 404) {
+          console.error(error);
+        }
+        setCertificate(null);
+      } finally {
+        setCertificateLoading(false);
+      }
+    };
+
     loadEnrollment();
     loadProgress();
     loadCertificate();
   }, [id]);
-
-  const loadEnrollment = async () => {
-    try {
-      setLoading(true);
-      const response = await getEnrollmentById(id);
-      setEnrollment(response.data.data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load enrollment");
-      setEnrollment(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProgress = async () => {
-    try {
-      setProgressLoading(true);
-      const [progressRes, summaryRes] = await Promise.all([
-        getProgressByEnrollment(id),
-        getProgressSummary(id),
-      ]);
-      setProgress(progressRes.data.data || []);
-      setSummary(summaryRes.data.data || null);
-    } catch (error) {
-      console.error(error);
-      // Non-blocking: enrollment details still render without progress.
-    } finally {
-      setProgressLoading(false);
-    }
-  };
-
-  const loadCertificate = async () => {
-    try {
-      setCertificateLoading(true);
-      const response = await getCertificateByEnrollment(id);
-      setCertificate(response.data.data || null);
-    } catch (error) {
-      // 404 just means "not issued yet" — treat as no certificate, not an error.
-      if (error.response?.status !== 404) {
-        console.error(error);
-      }
-      setCertificate(null);
-    } finally {
-      setCertificateLoading(false);
-    }
-  };
 
   const handleGenerateCertificate = async () => {
     try {

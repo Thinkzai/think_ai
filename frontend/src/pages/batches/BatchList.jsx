@@ -21,10 +21,6 @@ export default function BatchList() {
 
   const [confirmState, setConfirmState] = useState({ open: false, batchId: null });
 
-  useEffect(() => {
-    fetchBatches();
-  }, []);
-
   const fetchBatches = async () => {
     try {
       setLoading(true);
@@ -38,6 +34,22 @@ export default function BatchList() {
     }
   };
 
+  useEffect(() => {
+    const loadInitialBatches = async () => {
+      try {
+        const response = await getBatches();
+        setBatches(response.data.data || []);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load batches");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialBatches();
+  }, []);
+
   const filteredBatches = useMemo(() => {
     return batches.filter((b) => {
       const matchesSearch =
@@ -48,10 +60,6 @@ export default function BatchList() {
       return matchesSearch && matchesStatus;
     });
   }, [search, statusFilter, batches]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter]);
 
   const totalPages = Math.ceil(filteredBatches.length / ITEMS_PER_PAGE);
   const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
@@ -107,7 +115,10 @@ export default function BatchList() {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="batch / course / instructor"
               className="w-full bg-black/20 border border-purple-500/30 text-purple-100 placeholder-purple-300/30 focus:border-purple-400 focus:ring-purple-400/50 rounded-lg px-10 py-2 text-sm outline-none transition-all shadow-inner"
             />
@@ -119,7 +130,10 @@ export default function BatchList() {
             {['all', 'ACTIVE', 'INACTIVE'].map((status) => (
               <button
                 key={status}
-                onClick={() => setStatusFilter(status)}
+                onClick={() => {
+                    setStatusFilter(status);
+                    setCurrentPage(1);
+                  }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${statusFilter === status
                   ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
                   : 'text-gray-400 border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'

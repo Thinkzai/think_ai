@@ -1,33 +1,30 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getBatchById } from "../../api/batchApi";
 import { DetailsSkeleton } from "../../components/common/LoadingSkeleton";
 
 export default function BatchDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
-
   const [batch, setBatch] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadBatch = async () => {
+      try {
+        const response = await getBatchById(id);
+        setBatch(response.data.data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load batch");
+        setBatch(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadBatch();
   }, [id]);
-
-  const loadBatch = async () => {
-    try {
-      setLoading(true);
-      const response = await getBatchById(id);
-      setBatch(response.data.data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load batch");
-      setBatch(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return <DetailsSkeleton />;

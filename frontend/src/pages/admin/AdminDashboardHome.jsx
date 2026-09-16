@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import KPICard from '../../components/admin/KPICard';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
   fetchCourses,
   selectCourses,
@@ -44,14 +43,6 @@ export default function AdminDashboardHome() {
     { label: 'Revenue (MTD)', value: '\u2014', change: 'Awaiting backend endpoint', positive: false },
     { label: 'Active Learners', value: '\u2014', change: 'Awaiting backend endpoint', positive: false },
     { label: 'Pending Approvals', value: '\u2014', change: 'Awaiting backend endpoint', positive: false },
-  ];
-
-  const navItems = [
-    { label: 'Overview', active: true },
-    { label: 'Courses' },
-    { label: 'Learners' },
-    { label: 'Instructors' },
-    { label: 'Settings' },
   ];
 
   return (

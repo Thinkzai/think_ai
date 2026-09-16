@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function LoadingSpinner({ label = 'Loading...' }) {
   return (
     <div className="flex items-center justify-center gap-3 py-12 text-gray-400">

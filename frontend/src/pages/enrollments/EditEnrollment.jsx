@@ -19,39 +19,33 @@ function EditEnrollment() {
   });
 
   useEffect(() => {
-    loadBatches();
-    loadEnrollment();
+    const loadData = async () => {
+      try {
+        const [batchesResponse, enrollmentResponse] = await Promise.all([
+          getBatches(),
+          getEnrollmentById(id),
+        ]);
+
+        setBatches(batchesResponse.data.data || []);
+
+        const data = enrollmentResponse.data.data;
+
+        setEnrollment({
+          studentName: data.studentName || "",
+          studentEmail: data.studentEmail || "",
+          batchId: data.batchId || data.batch?.id || "",
+          enrollmentStatus: data.enrollmentStatus || "ACTIVE",
+        });
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load enrollment data");
+      } finally {
+        setLoadingBatches(false);
+      }
+    };
+
+    loadData();
   }, [id]);
-
-  const loadBatches = async () => {
-    try {
-      setLoadingBatches(true);
-      const response = await getBatches();
-      setBatches(response.data.data || []);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load batches");
-    } finally {
-      setLoadingBatches(false);
-    }
-  };
-
-  const loadEnrollment = async () => {
-    try {
-      const response = await getEnrollmentById(id);
-      const data = response.data.data;
-
-      setEnrollment({
-        studentName: data.studentName || "",
-        studentEmail: data.studentEmail || "",
-        batchId: data.batchId || data.batch?.id || "",
-        enrollmentStatus: data.enrollmentStatus || "ACTIVE",
-      });
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load enrollment");
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;

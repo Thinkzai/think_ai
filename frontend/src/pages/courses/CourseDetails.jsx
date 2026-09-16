@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from 'react-redux';
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getCourseById } from "../../api/courseApi";
@@ -34,28 +33,27 @@ function getFallbackImage(title, category) {
 export default function CourseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const dispatch = useDispatch(); 
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadCourse = async () => {
+      try {
+        setLoading(true);
+        const response = await getCourseById(id);
+        setCourse(response.data.data || response.data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load course details");
+        setCourse(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadCourse();
   }, [id]);
-
-  const loadCourse = async () => {
-    try {
-      setLoading(true);
-      const response = await getCourseById(id);
-      setCourse(response.data.data || response.data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load course details");
-      setCourse(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAddToCart = () => {
     if (!course) return;

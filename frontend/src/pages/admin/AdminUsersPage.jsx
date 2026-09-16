@@ -18,7 +18,6 @@ import {
   selectAdminUsersError,
 } from "../../features/adminUsers/adminUserSlice";
 import {
-  getUsersApi,
   toggleUserStatusApi,
   triggerPasswordResetApi,
   bulkAssignRolesApi,
@@ -42,7 +41,7 @@ export default function AdminUsersPage() {
   const ITEMS_PER_PAGE = 8;
 
   const dispatch = useDispatch();
-  const rawUsers = useSelector(selectAdminUsers) ?? [];
+  const rawUsers = useSelector(selectAdminUsers);
   const loading = useSelector(selectAdminUsersLoading);
   const error = useSelector(selectAdminUsersError);
   useSessionTimeout();
@@ -53,7 +52,9 @@ export default function AdminUsersPage() {
   const [confirmState, setConfirmState] = useState({ open: false, action: null, payload: null });
 
   // RBAC permission check using your imported hook
-  const canManageUsers = usePermission('manage_users') || usePermission('admin');
+  const canManageUsersPermission = usePermission('manage_users');
+  const isAdminPermission = usePermission('admin');
+  const canManageUsers = canManageUsersPermission || isAdminPermission;
 
   useEffect(() => {
     dispatch(fetchUsers());
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
 
   // Sort users strictly by ID in ascending order
   const users = useMemo(() => {
-    return [...rawUsers].sort((a, b) => (a.id || 0) - (b.id || 0));
+    return [...(rawUsers ?? [])].sort((a, b) => (a.id || 0) - (b.id || 0));
   }, [rawUsers]);
 
   // 1. Filter Users
@@ -74,11 +75,6 @@ export default function AdminUsersPage() {
       return matchesSearch && matchesRole;
     });
   }, [search, roleFilter, users]);
-
-  // 2. Reset to page 1 when search or filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, roleFilter]);
 
   // 3. Pagination Logic
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
@@ -190,7 +186,10 @@ export default function AdminUsersPage() {
               id="user-search"
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Search by name or email"
             />
           </div>
@@ -198,7 +197,10 @@ export default function AdminUsersPage() {
             {['all', 'Learner', 'Instructor', 'TA', 'Admin'].map((role) => (
               <button
                 key={role}
-                onClick={() => setRoleFilter(role)}
+                onClick={() => {
+                  setRoleFilter(role);
+                  setCurrentPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${roleFilter === role
                   ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
                   : 'text-gray-400 border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'

@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function KPICard({ label, value, change, positive = true }) {
   return (
     <div className="glass-panel rounded-2xl p-6">

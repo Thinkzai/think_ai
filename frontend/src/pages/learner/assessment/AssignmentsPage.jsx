@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 // import { fetchAssignments } from '../../../api/assessmentApi'; // TODO: doesn't exist yet — backend needs GET /api/assessments/mine or similar
 
 const STATUS_STYLES = {

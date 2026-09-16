@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
-import { useTheme } from '../components/ThemeContext';
+import { useTheme } from '../components/useTheme';
 import Branding from '../components/auth/Branding';
 
 const NAV_ITEMS = [
