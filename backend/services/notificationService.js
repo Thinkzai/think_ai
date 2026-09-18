@@ -5,13 +5,18 @@ require("dotenv").config();
 // SendGrid Configuration
 // ============================================================
 
-if (!process.env.SENDGRID_API_KEY) {
-    console.warn("⚠️ SENDGRID_API_KEY is not configured");
-} else {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
-
 const FROM_EMAIL = process.env.FROM_EMAIL;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+
+const DEV_EMAIL_MODE = !SENDGRID_API_KEY || !FROM_EMAIL;
+
+if (DEV_EMAIL_MODE) {
+    console.info(
+        "[mail] SendGrid not configured — email runs in dev mode (logged, not sent)"
+    );
+} else {
+    sgMail.setApiKey(SENDGRID_API_KEY);
+}
 
 // ============================================================
 // Generic Email Function
@@ -28,12 +33,11 @@ const sendEmail = async ({
             throw new Error("Recipient email is required");
         }
 
-        if (!FROM_EMAIL) {
-            throw new Error("FROM_EMAIL is not configured");
-        }
-
-        if (!process.env.SENDGRID_API_KEY) {
-            throw new Error("SENDGRID_API_KEY is not configured");
+        if (DEV_EMAIL_MODE) {
+            console.log(
+                `[dev] Email queued (SendGrid not configured, FROM_EMAIL=${FROM_EMAIL || "unset"}): to=${to}, subject=${subject}`
+            );
+            return { ok: true, dev: true };
         }
 
         const message = {

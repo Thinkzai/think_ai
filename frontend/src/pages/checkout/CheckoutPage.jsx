@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { getCourseById } from '../../api/courseApi';
-import { createOrder, verifyPayment } from '../../api/checkoutApi';
+import { createOrder, verifyPayment, resolvePaymentInstrument, PAYMENT_TEST_INSTRUMENTS, FALLBACK_CARD } from '../../api/checkoutApi';
 import { showToast, notificationReceived } from '../../features/preferenceNotification/preferenceNotificationSlice';
+import '../../styles/checkout.css';
 
 const STEPS = {
   REVIEW: 'review',
   PAYING: 'paying',
   SUCCESS: 'success',
+  FAILED: 'failed',
 };
 
 // Available mock coupons dictionary
@@ -53,6 +55,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(STEPS.REVIEW);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [receipt, setReceipt] = useState(null);
 
   // Coupon State
   const [couponCodeInput, setCouponCodeInput] = useState('');
@@ -72,6 +75,21 @@ export default function CheckoutPage() {
   });
   const [upiId, setUpiId] = useState('');
   const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: '' });
+
+  // Detect the active demo scenario from the entered test card / UPI id so the
+  // UI can preview the expected outcome before the payment is submitted.
+  const activeInstrument = resolvePaymentInstrument({
+    method: selectedMethod,
+    cardNumber: cardDetails.number,
+    upiId,
+  });
+
+  const handleUseTestInstrument = (instrument) => {
+    setSelectedMethod('card');
+    setCardDetails((previous) => ({ ...previous, number: instrument.instrument }));
+    setError(null);
+    toast.info(`Test card loaded: ${instrument.instrument}`, { theme: 'dark' });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -138,9 +156,20 @@ export default function CheckoutPage() {
         orderId: order.orderId,
         paymentId: mockPaymentId,
         signature: mockSignature,
+        instrument: activeInstrument,
       });
 
       if (result.success) {
+        setReceipt({
+          orderId: order.orderId,
+          paymentId: mockPaymentId,
+          courseTitle: course.title,
+          courseId,
+          amount: grandTotal,
+          currency: '₹',
+          paidAt: new Date().toISOString(),
+          enrollmentId: result.enrollmentId,
+        });
         setStep(STEPS.SUCCESS);
 
         // Generate a reward coupon for future purchases
@@ -164,14 +193,31 @@ export default function CheckoutPage() {
 
         toast.success('Payment successful — you are enrolled!', { theme: 'dark' });
       } else {
-        throw new Error('Payment could not be verified.');
+        const reason = result.reason || 'Payment could not be verified.';
+        setError(reason);
+        setStep(STEPS.FAILED);
+        dispatch(showToast({
+          title: 'Payment Failed',
+          message: reason,
+          type: 'error'
+        }));
       }
     } catch (err) {
       setError(err.message || 'Payment failed. Please try again.');
-      setStep(STEPS.REVIEW);
+      setStep(STEPS.FAILED);
+      dispatch(showToast({
+        title: 'Payment Failed',
+        message: err.message || 'Payment failed. Please try again.',
+        type: 'error'
+      }));
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setStep(STEPS.REVIEW);
   };
 
   if (loading) {
@@ -224,12 +270,88 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* Receipt */}
+          {receipt && (
+            <div className="checkout-receipt p-4 rounded-xl border border-slate-200 dark:border-[#323846] bg-slate-50 dark:bg-[#222736]/50 text-left space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Receipt</p>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Course</span>
+                <span className="font-medium text-slate-900 dark:text-white">{receipt.courseTitle}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Order ID</span>
+                <span className="font-mono text-slate-900 dark:text-white">{receipt.orderId}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Payment ID</span>
+                <span className="font-mono text-slate-900 dark:text-white">{receipt.paymentId}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Enrollment</span>
+                <span className="font-mono text-slate-900 dark:text-white">{receipt.enrollmentId}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">Paid</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {receipt.currency}{receipt.amount}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">When</span>
+                <span className="text-slate-900 dark:text-white">
+                  {new Date(receipt.paidAt).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <Link
+            to={`/learner/courses/${courseId}/courseDetails`}
+            className="block w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:from-indigo-400 hover:to-purple-500 transition-all cursor-pointer"
+          >
+            Access your course →
+          </Link>
+
           <button
             onClick={() => navigate('/learner')}
             className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-400 hover:to-emerald-500 transition-all cursor-pointer"
           >
             Go to my dashboard
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === STEPS.FAILED) {
+    return (
+      <div className="min-h-[calc(100vh-8rem)] p-4 md:p-8 flex items-center justify-center bg-slate-50 dark:bg-[#151821] text-slate-900 dark:text-[#f1f3f9]">
+        <div className="w-full max-w-md rounded-3xl bg-white dark:bg-[#1a1e2b] border border-red-500/30 dark:border-red-500/30 backdrop-blur-xl p-8 text-center shadow-2xl space-y-4">
+          <div className="mx-auto h-16 w-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M6 18L18 6M6 6l12 12"
+                stroke="#f87171"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Payment failed</h2>
+          <p className="text-sm text-slate-500 dark:text-[#94a3b8]">{error}</p>
+          <button
+            onClick={handleRetry}
+            className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/25 hover:from-purple-500 hover:to-indigo-500 transition-all cursor-pointer"
+          >
+            Try again
+          </button>
+          <Link
+            to="/forum"
+            className="block text-xs text-slate-500 dark:text-slate-400 hover:text-purple-500 transition-colors"
+          >
+            ← Back to forum
+          </Link>
         </div>
       </div>
     );
@@ -318,6 +440,31 @@ export default function CheckoutPage() {
           <div className="space-y-3">
             <h2 className="text-sm font-semibold tracking-wide text-slate-500 dark:text-[#94a3b8] uppercase">2. Choose Payment Method</h2>
 
+            {/* Test-card quick fill (Day 13 demo scenarios) */}
+            <div className="checkout-test-cards p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10 space-y-2">
+              <p className="text-xs font-semibold text-indigo-500 dark:text-indigo-300 uppercase tracking-wider">
+                Demo test cards — tap to fill
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_TEST_INSTRUMENTS.map((instrument) => (
+                  <button
+                    key={instrument.id}
+                    type="button"
+                    title={instrument.hint}
+                    onClick={() => handleUseTestInstrument(instrument)}
+                    className="checkout-test-card text-[11px] px-2.5 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20 cursor-pointer transition-colors"
+                  >
+                    {instrument.label}
+                  </button>
+                ))}
+              </div>
+              {activeInstrument ? (
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400" role="status">
+                  Scenario detected: {activeInstrument.label} — {activeInstrument.hint}
+                </p>
+              ) : null}
+            </div>
+
             <div className="space-y-3">
               <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${selectedMethod === 'upi' ? 'border-purple-500 bg-purple-500/10' : 'border-slate-200 dark:border-[#323846] bg-slate-50 dark:bg-[#222736]/40 hover:bg-slate-100 dark:hover:bg-[#222736]'}`}>
                 <div className="flex items-center gap-3">
@@ -369,7 +516,7 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-2 gap-3 p-4 rounded-xl border border-slate-200 dark:border-[#323846] bg-slate-50 dark:bg-[#222736]/55">
                   <input
                     type="text"
-                    placeholder="Card Number"
+                    placeholder={FALLBACK_CARD}
                     value={cardDetails.number}
                     onChange={(e) => setCardDetails({ ...cardDetails, number: e.target.value })}
                     className="col-span-2 bg-white dark:bg-[#1a1e2b] border border-slate-300 dark:border-[#3e4658] rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-purple-500 font-mono tracking-widest"

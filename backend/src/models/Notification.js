@@ -33,6 +33,14 @@ function markRead(id) {
     return notification;
 }
 
+function markAllRead(userId) {
+    const notifications = db.notifications.filter((n) => n.userId === userId);
+    notifications.forEach((n) => {
+        n.read = true;
+    });
+    return notifications.map(serialize);
+}
+
 function getPrefs(userId) {
     if (!db.notificationPrefs[userId]) {
         db.notificationPrefs[userId] = { email: true, inApp: true, sms: false };

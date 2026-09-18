@@ -1,4 +1,13 @@
 const Notification = require("../models/Notification");
+const forumSocket = require("../websocket/forumSocket");
+
+/** Creates a notification and pushes it to the recipient's live socket room. */
+function createAndBroadcast({ userId, type, message, link }) {
+    if (!userId) return null;
+    const notification = Notification.create({ userId, type, message, link });
+    forumSocket.pushNotification(notification);
+    return notification;
+}
 
 /**
  * Create notifications for every @mention found in `text`.
@@ -13,7 +22,7 @@ function notifyMentions({ text, authorId, message, link }) {
             return prefs.inApp !== false;
         })
         .map((item) =>
-            Notification.create({
+            createAndBroadcast({
                 userId: item.userId,
                 type: item.type,
                 message: item.message,
@@ -29,7 +38,7 @@ function notifyReply({ discussionAuthorId, replierName, discussionId, discussion
     if (!discussionAuthorId) return null;
     const prefs = Notification.getPrefs(discussionAuthorId);
     if (prefs.inApp === false) return null;
-    return Notification.create({
+    return createAndBroadcast({
         userId: discussionAuthorId,
         type: "reply",
         message: `${replierName} replied to "${discussionTitle}"`,
@@ -44,7 +53,7 @@ function notifySolved({ discussionAuthorId, solverName, discussionId, discussion
     if (!discussionAuthorId) return null;
     const prefs = Notification.getPrefs(discussionAuthorId);
     if (prefs.inApp === false) return null;
-    return Notification.create({
+    return createAndBroadcast({
         userId: discussionAuthorId,
         type: "solved",
         message: `Your question "${discussionTitle}" was marked as solved by ${solverName}`,

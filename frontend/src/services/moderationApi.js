@@ -66,3 +66,9 @@ export function saveNotificationPreferences(userId, prefs) {
     (payload) => payload.data
   );
 }
+
+export function markAllNotificationsRead(userId) {
+  return forumPost("/notifications/read-all", userId ? { userId } : {}).then(
+    (payload) => payload.data
+  );
+}

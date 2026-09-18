@@ -57,6 +57,7 @@
 
 .rich-editor__toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   border: 1px solid var(--forum-border, #2a3555);
@@ -212,4 +213,33 @@
 
 @media (max-width: 375px) {
   .confirm-dialog { max-width: none; padding: 16px; }
+}
+
+/* ---------- focus visibility (keyboard navigation) ---------- */
+
+.moderation-page a:focus-visible,
+.moderation-page button:focus-visible,
+.moderation-page input:focus-visible,
+.moderation-page select:focus-visible,
+.moderation-page textarea:focus-visible,
+.confirm-dialog button:focus-visible {
+  outline: 2px solid var(--forum-accent, #6366f1);
+  outline-offset: 2px;
+}
+
+/* ---------- 44px touch targets (mobile / coarse pointers) ---------- */
+
+@media (hover: none) and (pointer: coarse) {
+  .moderation-page .btn {
+    min-height: 44px;
+  }
+  .moderation-page .select {
+    min-height: 44px;
+  }
+  .moderation-page input[type="text"] {
+    min-height: 44px;
+  }
+  .confirm-dialog .btn {
+    min-height: 44px;
+  }
 }

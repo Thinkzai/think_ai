@@ -197,7 +197,9 @@ addDiscussion({
     upvotes: 0,
     downvotes: 14,
     flagged: true,
-    flagReason: "Spam / advertising"
+    flagReason: "Spam / advertising",
+    flagReporterName: "mod-bot",
+    flagColor: "red"
 });
 
 // Generated archive so search/filter/pagination can be validated at scale.
@@ -297,6 +299,8 @@ const comments = [
         authorId: "u7",
         createdAt: isoAgo(0, -3),
         flagged: true,
+        flagReason: "Spam / advertising",
+        flagReporterName: "jenny-vpn",
         hidden: false
     }
 ];

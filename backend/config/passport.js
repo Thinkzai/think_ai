@@ -13,7 +13,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     }
   ));
 } else {
-  console.warn('⚠️  Google OAuth disabled — GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET not set');
+  console.info('[auth] Google OAuth disabled — optional; add GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET to enable');
 }
 
 passport.serializeUser((user, done) => done(null, user));

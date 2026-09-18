@@ -20,10 +20,11 @@ const FORUM_SERVICES = [
     "bookmarkApi.js",
     "moderationApi.js",
     "studioApi.js",
-    "websocket.js"
+    "websocket.js",
+    "forumSocketClient.js"
 ];
 
-const FORUM_HOOKS = ["useDiscussions.js", "useVoting.js", "useBookmarks.js", "useWebSocket.js"];
+const FORUM_HOOKS = ["useDiscussions.js", "useVoting.js", "useBookmarks.js", "useWebSocket.js", "useForumSocket.js"];
 
 const MODULE_DIRS = [
     path.join(SRC_ROOT, "components", "forum"),

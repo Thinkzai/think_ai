@@ -20,6 +20,7 @@ import {
   unbanUser,
   warnUser,
 } from "../../services/moderationApi";
+import { useForumSocket } from "../../hooks/useForumSocket";
 
 /** Moderation dashboard (Phase 8). */
 export default function ModerationDashboardPage() {
@@ -71,6 +72,21 @@ export default function ModerationDashboardPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Real-time: any moderation change (this tab or another moderator's tab)
+  // refreshes the flagged queue / user list without a full page reload.
+  const { subscribe } = useForumSocket();
+  useEffect(() => {
+    const unsubscribe = subscribe("moderation:update", (payload) => {
+      const summary =
+        payload && (payload.hidden || payload.banned || payload.resolved)
+          ? `Moderation update: ${payload.action} applied`
+          : "Moderation update received";
+      pushToast(summary);
+      load();
+    });
+    return unsubscribe;
+  }, [subscribe, load, pushToast]);
 
   const runToggleHidden = async (item) => {
     const key = `${item.type}:${item.id}`;

@@ -82,7 +82,7 @@ export default function DiscussionCard({
           <span>
             <span
               className="avatar"
-              style={{ background: d.authorColor || "var(--forum-accent)" }}
+              style={{ background: d.authorColor || "var(--forum-accent-solid)" }}
               aria-hidden="true"
             >
               {initials(d.author?.name)}
@@ -92,9 +92,9 @@ export default function DiscussionCard({
           <span>· {relativeTime(d.createdAt)}</span>
         </div>
 
-        <h3 className="discussion-card__title">
+        <h2 className="discussion-card__title">
           <Link to={`/forum/${d.id}`}>{highlightText(d.title, searchTerm)}</Link>
-        </h3>
+        </h2>
 
         <p className="discussion-card__excerpt">{highlightText(String(d.body || "").slice(0, 180), searchTerm)}</p>
 

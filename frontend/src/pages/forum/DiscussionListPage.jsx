@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import "../../styles/forum.css";
 
 import DiscussionList from "../../components/forum/DiscussionList";
@@ -9,6 +9,7 @@ import TagFilter from "../../components/forum/TagFilter";
 import { useDiscussions } from "../../hooks/useDiscussions";
 import { useVoting } from "../../hooks/useVoting";
 import { useBookmarks } from "../../hooks/useBookmarks";
+import { useForumSocket } from "../../hooks/useForumSocket";
 import { fetchCategories } from "../../services/categoryApi";
 
 /**
@@ -16,6 +17,8 @@ import { fetchCategories } from "../../services/categoryApi";
  * tag/category/solved filters and sorting.
  */
 export default function DiscussionListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const {
     items,
     setItems,
@@ -47,8 +50,45 @@ export default function DiscussionListPage() {
     };
   }, []);
 
+  // URL is the single source of truth for search: seed `filters.search` from
+  // `?search=` once on mount, then keep the URL param in sync (no reload).
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current) return;
+    seededRef.current = true;
+    const urlSearch = searchParams.get("search") || "";
+    if (urlSearch && urlSearch !== (filters.search || "")) {
+      applyFilters({ ...filters, search: urlSearch });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!seededRef.current) return;
+    const nextParams = new URLSearchParams(searchParams);
+    const current = filters.search || "";
+    if (current) nextParams.set("search", current);
+    else nextParams.delete("search");
+    if (nextParams.toString() !== searchParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.search]);
+
   const { vote, pendingIds } = useVoting();
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const { subscribe } = useForumSocket();
+
+  // Live list: prepend threads published by anyone while this page is open.
+  useEffect(() => {
+    const unsubscribe = subscribe("discussion:new", (discussion) => {
+      setItems((previous) => {
+        if (previous.some((d) => d.id === discussion.id)) return previous;
+        return [discussion, ...previous];
+      });
+    });
+    return unsubscribe;
+  }, [subscribe, setItems]);
 
   const patchDiscussion = useCallback(
     (patch) => {
@@ -88,6 +128,7 @@ export default function DiscussionListPage() {
         <nav className="card-footer" style={{ marginBottom: 14 }} aria-label="Forum sections">
           <Link to="/forum/categories" className="tag-chip">📁 Categories</Link>
           <Link to="/forum/bookmarks" className="tag-chip">🔖 Bookmarks</Link>
+          <Link to="/forum/notifications" className="tag-chip">🔔 Notifications</Link>
           <Link to="/forum/studio" className="tag-chip">🎥 Live Studio</Link>
           <Link to="/forum/moderation" className="tag-chip">🛡 Moderation</Link>
           <Link to="/forum/preferences" className="tag-chip">🔔 Preferences</Link>
@@ -144,6 +185,8 @@ export default function DiscussionListPage() {
                   : "Be the first to start a conversation with the community."
               }
               searchTerm={filters.search || ""}
+              emptyActionLabel={hasActiveFilters ? "Clear filters" : "Start a discussion"}
+              onEmptyAction={hasActiveFilters ? () => applyFilters({}) : () => (window.location.href = "/forum/new")}
             />
             <PaginationControls page={meta.page} totalPages={meta.totalPages} onChange={setPage} />
             <p className="pagination__info" style={{ textAlign: "center", marginTop: 8 }}>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { forumGet } from "../../services/forumApi";
 
 const TOOLBAR_ACTIONS = [
@@ -15,13 +15,12 @@ const TOOLBAR_ACTIONS = [
  * @mention autocomplete (Phase 8). Stores plain text/markdown — no
  * external editor dependency.
  */
-export default function RichTextEditor({ value, onChange, placeholder }) {
+export default function RichTextEditor({ value, onChange, placeholder, id }) {
   const [showPreview, setShowPreview] = useState(false);
   const textareaRef = useRef(null);
   const [mentionQuery, setMentionQuery] = useState(null);
   const [mentionOptions, setMentionOptions] = useState([]);
   const [mentionIndex, setMentionIndex] = useState(0);
-  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
 
   const wrapSelection = (before, after) => {
     const el = textareaRef.current;
@@ -49,14 +48,6 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
       const query = atMatch[1];
       setMentionQuery(query);
       setMentionIndex(0);
-
-      const rect = el.getBoundingClientRect();
-      const lineHeight = 24;
-      const linesBeforeCursor = textBefore.split("\n").length;
-      setMentionPosition({
-        top: rect.top + linesBeforeCursor * lineHeight - el.scrollTop,
-        left: rect.left + 20,
-      });
 
       forumGet("/moderation/users/search", { q: query }).then((payload) => {
         const users = (payload.data || []).filter(
@@ -149,6 +140,7 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
         <div style={{ position: "relative" }}>
           <textarea
             ref={textareaRef}
+            id={id}
             className="rich-editor__textarea"
             rows={5}
             value={value}

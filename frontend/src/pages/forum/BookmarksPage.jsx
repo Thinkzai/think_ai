@@ -5,6 +5,7 @@ import "../../styles/forum.css";
 import DiscussionList from "../../components/forum/DiscussionList";
 import EmptyState from "../../components/forum/EmptyState";
 import { fetchBookmarks, removeBookmark } from "../../services/bookmarkApi";
+import { useForumSocket } from "../../hooks/useForumSocket";
 
 /** Bookmarked discussions page (Phase 5/9) with mock API sync. */
 export default function BookmarksPage() {
@@ -28,6 +29,21 @@ export default function BookmarksPage() {
       cancelled = true;
     };
   }, []);
+
+  // Real-time: keep local bookmark state in sync when a bookmark changes for
+  // this user in another tab (added or removed).
+  const { subscribe } = useForumSocket();
+  useEffect(() => {
+    const unsubscribe = subscribe("bookmark:changed", (payload) => {
+      if (!payload || payload.bookmarked === undefined) return;
+      fetchBookmarks()
+        .then((data) => setBookmarks(data))
+        .catch(() => {
+          /* ignore transient sync errors */
+        });
+    });
+    return unsubscribe;
+  }, [subscribe]);
 
   const handleRemove = async (discussionId) => {
     const removedBookmark = bookmarks.find((b) => b.discussionId === discussionId);

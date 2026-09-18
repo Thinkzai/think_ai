@@ -2,6 +2,7 @@ const Comment = require("../models/Comment");
 const Discussion = require("../models/Discussion");
 const notificationService = require("../services/notificationService");
 const discussionService = require("../services/discussionService");
+const forumSocket = require("../websocket/forumSocket");
 
 function list(req, res) {
     const result = discussionService.listDiscussions(req.query, req.user ? req.user.id : null);
@@ -39,6 +40,8 @@ function create(req, res) {
         message: `${req.user.username} mentioned you in “${trimmedTitle}”`,
         link: `/forum/${discussion.id}`
     });
+
+    forumSocket.pushDiscussionNew(Discussion.serialize(discussion, req.user.id));
 
     res.status(201).json({
         success: true,

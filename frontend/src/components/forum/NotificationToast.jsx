@@ -24,23 +24,27 @@ export default function NotificationToast({
   const items = useMemo(() => toasts || notifications || [], [toasts, notifications]);
   const delay =
     autoDismissMs !== undefined ? autoDismissMs : autoCloseMs !== undefined ? autoCloseMs : DEFAULT_AUTO_DISMISS_MS;
+  const progressMs =
+    !delay ? null : Math.max(Math.min(Number(delay) || 0, 15000), 1500);
   const [pausedIds, setPausedIds] = useState(() => new Set());
   const timersRef = useRef(new Map());
 
   useEffect(() => {
     if (!delay || !onDismiss) return undefined;
 
+    const timers = timersRef.current;
+
     const startTimer = (notification) => {
       if (pausedIds.has(notification.id)) return;
       const timer = setTimeout(() => onDismiss(notification.id), delay);
-      timersRef.current.set(notification.id, timer);
+      timers.set(notification.id, timer);
     };
 
     items.forEach(startTimer);
 
     return () => {
-      timersRef.current.forEach((timer) => clearTimeout(timer));
-      timersRef.current.clear();
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
     };
   }, [items, delay, onDismiss, pausedIds]);
 
@@ -96,6 +100,13 @@ export default function NotificationToast({
           >
             ✕
           </button>
+          {progressMs ? (
+            <span
+              className="notification-toast__progress"
+              style={{ animationDuration: `${progressMs}ms` }}
+              aria-hidden="true"
+            />
+          ) : null}
         </div>
       ))}
     </div>

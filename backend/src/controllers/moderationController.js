@@ -2,6 +2,22 @@ const Comment = require("../models/Comment");
 const Discussion = require("../models/Discussion");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
+const forumSocket = require("../websocket/forumSocket");
+
+function notifyUser(userId, message) {
+    if (!userId) return;
+    const notification = Notification.create({
+        userId,
+        type: "moderation",
+        message,
+        link: "/forum"
+    });
+    forumSocket.pushNotification(notification);
+}
+
+function announceModeration(payload) {
+    forumSocket.pushModerationUpdate(payload);
+}
 
 function buildQueueItem(kind, item) {
     const author = User.findById(item.authorId);
@@ -15,6 +31,7 @@ function buildQueueItem(kind, item) {
                 : String(item.body).slice(0, 160),
         reason: item.flagReason,
         flaggedAt: item.updatedAt || item.createdAt,
+        reporterName: item.flagReporterName || "Anonymous user",
         hidden: Boolean(item.hidden),
         authorName: author ? author.name : "Unknown user",
         authorId: item.authorId
@@ -40,12 +57,8 @@ function banUser(req, res) {
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
     }
-    Notification.create({
-        userId: req.params.id,
-        type: "moderation",
-        message: "Your account has been banned by a moderator.",
-        link: "/forum"
-    });
+    notifyUser(req.params.id, "Your account has been banned by a moderator.");
+    announceModeration({ action: "ban", userId: user.id, banned: true });
     res.status(200).json({ success: true, data: user });
 }
 
@@ -54,12 +67,8 @@ function unbanUser(req, res) {
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
     }
-    Notification.create({
-        userId: req.params.id,
-        type: "moderation",
-        message: "Your account has been unbanned.",
-        link: "/forum"
-    });
+    notifyUser(req.params.id, "Your account has been unbanned.");
+    announceModeration({ action: "unban", userId: user.id, banned: false });
     res.status(200).json({ success: true, data: user });
 }
 
@@ -68,12 +77,8 @@ function warnUser(req, res) {
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
     }
-    Notification.create({
-        userId: req.params.id,
-        type: "moderation",
-        message: "You have received a warning from a moderator.",
-        link: "/forum"
-    });
+    notifyUser(req.params.id, "You have received a warning from a moderator.");
+    announceModeration({ action: "warn", userId: user.id, warned: true });
     res.status(200).json({ success: true, data: user });
 }
 
@@ -83,12 +88,8 @@ function muteUser(req, res) {
     if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
     }
-    Notification.create({
-        userId: req.params.id,
-        type: "moderation",
-        message: muted !== false ? "You have been muted." : "You have been unmuted.",
-        link: "/forum"
-    });
+    notifyUser(req.params.id, muted !== false ? "You have been muted." : "You have been unmuted.");
+    announceModeration({ action: muted !== false ? "mute" : "unmute", userId: user.id, muted: muted !== false });
     res.status(200).json({ success: true, data: user });
 }
 
@@ -108,6 +109,13 @@ function setContentVisibility(req, res) {
         return res.status(404).json({ success: false, message: `${type} not found` });
     }
     User.logAuditAction({ type: hidden ? "hide_content" : "show_content", targetContentId: id, contentType: type });
+    announceModeration({
+        action: hidden ? "hide" : "show",
+        contentType: type,
+        contentId: id,
+        hidden: Boolean(updated.hidden),
+        targetUserId: updated.authorId
+    });
     res.status(200).json({
         success: true,
         data: { id, type, hidden: Boolean(updated.hidden) }
@@ -123,6 +131,13 @@ function resolveContent(req, res) {
         return res.status(404).json({ success: false, message: `${type} not found` });
     }
     User.logAuditAction({ type: "resolve_flag", targetContentId: id, contentType: type });
+    announceModeration({
+        action: "dismiss",
+        contentType: type,
+        contentId: id,
+        resolved: true,
+        targetUserId: updated.authorId
+    });
     res.status(200).json({ success: true, data: { id, type, resolved: true } });
 }
 
