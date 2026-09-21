@@ -71,6 +71,15 @@ app.use(
     swaggerUi.setup(swaggerSpec)
 );
 
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "healthy",
+        service: "thinkz-lms-backend",
+        uptimeSeconds: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString()
+    });
+});
+
 app.get("/", (req, res) => {
     res.status(200).json({
         success: true,

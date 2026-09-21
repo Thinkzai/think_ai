@@ -2,106 +2,222 @@
 set -Eeuo pipefail
 
 TAG="${1:?Usage: deploy-ecr.sh IMAGE_TAG}"
+
 AWS_REGION="ap-south-2"
 ECR_REGISTRY="114757333589.dkr.ecr.ap-south-2.amazonaws.com"
 PROJECT_DIR="/opt/thinkz-ai"
 
 BACKEND_IMAGE="${ECR_REGISTRY}/thinkz-ai-backend:${TAG}"
-FRONTEND_IMAGE="${ECR_REGISTRY}/thinkz-ai-frontend:${TAG}"
+SWITCH_SCRIPT="${PROJECT_DIR}/scripts/switch-backend-upstream.sh"
+UPSTREAM_FILE="${PROJECT_DIR}/infra/nginx/runtime/backend-active.conf"
+
+GREEN_CONTAINER="thinkz_backend_green"
+GREEN_ALIAS="backend_green"
+NETWORK="thinkz-ai_default"
 
 cd "$PROJECT_DIR"
 
-OLD_BACKEND="$(docker inspect thinkz_backend --format '{{.Config.Image}}')"
-OLD_FRONTEND="$(docker inspect thinkz_frontend --format '{{.Config.Image}}')"
-DEPLOYMENT_STARTED=false
+echo "===== BLUE-GREEN ECR DEPLOYMENT ====="
+echo "Tag: $TAG"
+echo "Backend image: $BACKEND_IMAGE"
 
-rollback() {
-  trap - ERR
+echo
+echo "===== 1. PRE-FLIGHT CHECKS ====="
 
-  if [ "$DEPLOYMENT_STARTED" = true ]; then
-    echo "Deployment failed. Restoring previous images."
-
-    BACKEND_IMAGE="$OLD_BACKEND" \
-    FRONTEND_IMAGE="$OLD_FRONTEND" \
-    docker compose up -d --no-deps --force-recreate backend frontend
-  fi
+[ -x "$SWITCH_SCRIPT" ] || {
+    echo "ERROR: Switch script missing or not executable"
+    exit 1
 }
 
-trap rollback ERR
+[ -f "$UPSTREAM_FILE" ] || {
+    echo "ERROR: Runtime upstream file missing"
+    exit 1
+}
 
-aws ecr get-login-password --region "$AWS_REGION" |
-docker login --username AWS --password-stdin "$ECR_REGISTRY"
+[ -f backend/.env ] || {
+    echo "ERROR: backend/.env missing"
+    exit 1
+}
+
+CURRENT="$(
+    awk '
+      /server (backend|backend_green):5000;/ {
+        value=$2
+        sub(":5000;", "", value)
+        print value
+        exit
+      }
+    ' "$UPSTREAM_FILE"
+)"
+
+echo "Currently active backend: $CURRENT"
+
+if [ "$CURRENT" != "backend" ]; then
+    echo "SAFETY STOP:"
+    echo "This deployment version expects BLUE/backend to be active."
+    echo "Current active backend is: $CURRENT"
+    exit 1
+fi
+
+docker inspect thinkz_backend >/dev/null 2>&1 || {
+    echo "ERROR: BLUE backend container missing"
+    exit 1
+}
+
+docker inspect thinkz_frontend >/dev/null 2>&1 || {
+    echo "ERROR: Production frontend missing"
+    exit 1
+}
+
+curl -fsS http://localhost/ >/dev/null || {
+    echo "ERROR: Production frontend pre-check failed"
+    exit 1
+}
+
+curl -fsS http://localhost/api/courses >/dev/null || {
+    echo "ERROR: Production API pre-check failed"
+    exit 1
+}
+
+echo "Pre-flight production checks: PASS"
+
+echo
+echo "===== 2. ECR LOGIN ====="
+
+aws ecr get-login-password \
+    --region "$AWS_REGION" |
+docker login \
+    --username AWS \
+    --password-stdin "$ECR_REGISTRY"
+
+echo
+echo "===== 3. PULL CANDIDATE BACKEND ====="
 
 docker pull "$BACKEND_IMAGE"
-docker pull "$FRONTEND_IMAGE"
 
-DEPLOYMENT_STARTED=true
+echo
+echo "===== 4. REMOVE OLD INACTIVE GREEN ====="
 
-BACKEND_IMAGE="$BACKEND_IMAGE" \
-FRONTEND_IMAGE="$FRONTEND_IMAGE" \
-docker compose up -d --no-deps --force-recreate backend frontend
+if docker inspect "$GREEN_CONTAINER" >/dev/null 2>&1; then
+    docker rm -f "$GREEN_CONTAINER"
+fi
+
+echo
+echo "===== 5. START NEW GREEN ====="
+
+docker run -d \
+    --name "$GREEN_CONTAINER" \
+    --network "$NETWORK" \
+    --network-alias "$GREEN_ALIAS" \
+    --env-file backend/.env \
+    --restart no \
+    --health-cmd='wget -q -O /dev/null http://127.0.0.1:5000/health || exit 1' \
+    --health-interval=10s \
+    --health-timeout=5s \
+    --health-retries=3 \
+    --health-start-period=10s \
+    "$BACKEND_IMAGE"
+
+echo
+echo "===== 6. WAIT FOR GREEN HEALTH ====="
+
+GREEN_OK=false
 
 for attempt in $(seq 1 12); do
-  BACKEND_HEALTH="$(docker inspect thinkz_backend --format '{{.State.Health.Status}}')"
-  FRONTEND_HEALTH="$(docker inspect thinkz_frontend --format '{{.State.Health.Status}}')"
+    GREEN_STATUS="$(
+        docker inspect "$GREEN_CONTAINER" \
+          --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'
+    )"
 
-  POSTGRES_HEALTH="$(docker inspect thinkz_postgres --format '{{.State.Health.Status}}')"
+    echo "Attempt ${attempt}/12: green=${GREEN_STATUS}"
 
-  if [ "$BACKEND_HEALTH" = "healthy" ] &&
-     [ "$FRONTEND_HEALTH" = "healthy" ] &&
-     [ "$POSTGRES_HEALTH" = "healthy" ] &&
-     curl -fsS http://localhost/ > /dev/null &&
-     curl -fsS http://localhost/health > /dev/null &&
-     curl -fsS http://localhost/api/courses > /dev/null; then
-
-    echo "HTTP and database smoke checks passed."
-
-    if docker exec thinkz_backend node - <<'NODE'
-const { io } = require("socket.io-client");
-
-const socket = io("http://frontend", {
-  path: "/socket.io",
-  transports: ["websocket"],
-  extraHeaders: {
-    "x-demo-role": "admin",
-    "x-demo-user-id": "deployment-smoke-test"
-  },
-  timeout: 5000,
-  reconnection: false
-});
-
-const timer = setTimeout(() => {
-  console.error("WebSocket smoke test timed out");
-  socket.close();
-  process.exit(1);
-}, 7000);
-
-socket.on("connect", () => {
-  console.log("WebSocket smoke test passed");
-  clearTimeout(timer);
-  socket.close();
-  process.exit(0);
-});
-
-socket.on("connect_error", (err) => {
-  console.error("WebSocket smoke test failed:", err.message);
-  clearTimeout(timer);
-  socket.close();
-  process.exit(1);
-});
-NODE
-    then
-      trap - ERR
-      echo "DEPLOYMENT_SUCCESS: $TAG"
-      exit 0
+    if [ "$GREEN_STATUS" = "healthy" ]; then
+        GREEN_OK=true
+        break
     fi
 
-    echo "WebSocket smoke verification failed."
-  fi
-
-  echo "Waiting for services: attempt ${attempt}/12"
-  sleep 5
+    sleep 5
 done
 
-echo "Health verification failed."
-false
+if [ "$GREEN_OK" != true ]; then
+    echo "ERROR: GREEN candidate did not become healthy"
+    docker logs --tail 100 "$GREEN_CONTAINER" || true
+    exit 1
+fi
+
+echo "GREEN Docker health: PASS"
+
+echo
+echo "===== 7. PRIVATE GREEN SMOKE TEST ====="
+
+docker run --rm \
+    --network "$NETWORK" \
+    curlimages/curl:8.12.1 \
+    -fsS \
+    "http://${GREEN_ALIAS}:5000/health"
+
+echo
+
+GREEN_API_CODE="$(
+    docker run --rm \
+      --network "$NETWORK" \
+      curlimages/curl:8.12.1 \
+      -sS \
+      -o /dev/null \
+      -w '%{http_code}' \
+      "http://${GREEN_ALIAS}:5000/api/courses"
+)"
+
+if [ "$GREEN_API_CODE" != "200" ]; then
+    echo "ERROR: GREEN API returned HTTP ${GREEN_API_CODE}"
+    exit 1
+fi
+
+echo "GREEN API: HTTP 200"
+
+echo
+echo "===== 8. SWITCH PRODUCTION BLUE -> GREEN ====="
+
+"$SWITCH_SCRIPT" backend_green
+
+echo
+echo "===== 9. POST-SWITCH VERIFICATION ====="
+
+grep -q 'server backend_green:5000;' "$UPSTREAM_FILE" || {
+    echo "ERROR: GREEN is not active after switch"
+    "$SWITCH_SCRIPT" backend || true
+    exit 1
+}
+
+if ! curl -fsS http://localhost/ >/dev/null; then
+    echo "ERROR: Production frontend failed after switch"
+    "$SWITCH_SCRIPT" backend || true
+    exit 1
+fi
+
+if ! curl -fsS http://localhost/api/courses >/dev/null; then
+    echo "ERROR: Production API failed after switch"
+    "$SWITCH_SCRIPT" backend || true
+    exit 1
+fi
+
+GREEN_HEALTH="$(
+    docker inspect "$GREEN_CONTAINER" \
+      --format '{{.State.Health.Status}}'
+)"
+
+if [ "$GREEN_HEALTH" != "healthy" ]; then
+    echo "ERROR: GREEN became unhealthy after switch"
+    "$SWITCH_SCRIPT" backend || true
+    exit 1
+fi
+
+echo
+echo "===== DEPLOYMENT SUCCESS ====="
+echo "Tag: $TAG"
+echo "Active backend: backend_green"
+echo "Green health: $GREEN_HEALTH"
+echo "Production frontend: PASS"
+echo "Production API: PASS"
+echo
+echo "BLUE remains running and available for rollback."

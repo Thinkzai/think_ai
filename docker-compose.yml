@@ -44,6 +44,8 @@ services:
       - backend
     ports:
       - "80:80"
+    volumes:
+      - ./infra/nginx/runtime:/etc/nginx/runtime:ro
     logging:
       driver: awslogs
       options:

@@ -2,7 +2,7 @@ services:
   backend:
     image: "${BACKEND_IMAGE:-thinkz-ai-backend:latest}"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null 127.0.0.1:5000 || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5000/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
