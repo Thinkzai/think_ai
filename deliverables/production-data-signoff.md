@@ -45,7 +45,7 @@ Bucket: `client-learning-media-prod`
 - Bucket exists.
 - Versioning enabled.
 - Lifecycle transition to STANDARD_IA after 90 days configured.
-- Current object listing: Empty.
+- Current object listing: No actual media objects; only the zero-byte `recordings/` prefix marker exists.
 - Test/mock media found: None.
 - Real client media available for checksum verification: None.
 
@@ -112,3 +112,23 @@ Backend Blue-Green production switching and rollback have been technically verif
 This infrastructure verification does not change the production-data status.
 
 Real client application data and client media are still unavailable for final content verification. Application data-owner confirmation and team-lead sign-off therefore remain pending.
+
+## Fresh Production Verification - 18 September 2026
+
+- PostgreSQL container: Running and healthy.
+- PostgreSQL container restart count: 0.
+- AuditLog rows: 0.
+- Batch rows: 0.
+- Course rows: 0.
+- Enrollment rows: 0.
+- Prisma migrations: 3.
+- Production media bucket versioning: Enabled.
+- S3 lifecycle: STANDARD_IA transition after 90 days enabled.
+- Production media: No actual media objects; only zero-byte `recordings/` prefix marker exists.
+- Courses API: HTTP 200.
+- Application health endpoint: HTTP 200.
+- Production frontend: HTTP 200.
+
+Technical production-state verification: Passed.
+
+Real client application data and client media are currently unavailable, so content-level validation remains not applicable until such data is introduced. Application data-owner confirmation and team-lead approval remain pending.

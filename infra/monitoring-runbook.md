@@ -222,3 +222,24 @@ Green upstream configuration:
 Switch and rollback evidence is stored under:
 
 `/opt/thinkz-ai-bluegreen/`
+
+## Backup, Restore and Alert Verification - 21 September 2026
+
+- Production database: PostgreSQL 16 running in Docker.
+- Automated PostgreSQL backup: Passed.
+- SSM backup commands: Success.
+- Latest verified dump: thinkz_ai_2026-09-21_02-00-01.dump.
+- Backup size: 11,228 bytes.
+- pg_restore readability validation: Passed.
+- SHA-256 checksum generation: Passed.
+- S3 dump and checksum upload: Passed.
+- Local seven-day retention verification: Passed.
+- Isolated PostgreSQL restore test: Passed.
+- Restored tables: AuditLog, Batch, Course, Enrollment and _prisma_migrations.
+- Temporary restore container removed after verification.
+- Production PostgreSQL was not modified or restarted.
+- CPU, memory, backend 5xx and EC2 status alarms: Enabled and OK.
+- All four alarms have SNS actions enabled.
+- SNS email and SMS subscriptions: Confirmed.
+- RDS monitoring is not applicable because the current architecture uses Docker PostgreSQL.
+- TL confirmation is pending for Docker PostgreSQL as the approved RDS alternative.
