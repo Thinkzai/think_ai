@@ -2,39 +2,23 @@
 import { Link } from 'react-router-dom';
 
 /**
- * Live Session Notification Toast
+ * Live Session notification toast.
  *
- * Handles Socket.IO notifications:
+ * Handles notifications for:
  * - session:started
  * - session:ended
  *
- * Displays notification title, message,
- * session link, and dismiss button.
+ * Supports session links and dismiss actions.
  */
 export default function LiveSessionToast({ toast, onDismiss }) {
   if (!toast) return null;
 
   const {
-    title,
-    message,
+    title = 'Live Session',
+    message = 'A live session is available.',
     link,
-    linkLabel,
+    linkLabel = 'Open session',
   } = toast;
-
-  const isExternalLink =
-    typeof link === 'string' &&
-    /^https?:\/\//i.test(link);
-
-  const displayTitle = title || 'Live Session';
-  const displayMessage =
-    message || 'A live session is available.';
-  const displayLinkLabel = linkLabel || 'Open session';
-
-  const linkClassName =
-    'inline-block mt-2 px-3 py-1.5 rounded-lg ' +
-    'bg-emerald-600 hover:bg-emerald-500 ' +
-    'text-white text-xs font-semibold ' +
-    'transition-colors cursor-pointer';
 
   return (
     <div
@@ -48,31 +32,20 @@ export default function LiveSessionToast({ toast, onDismiss }) {
 
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-semibold text-white">
-          {displayTitle}
+          {title}
         </h4>
 
         <p className="text-xs text-slate-300 mt-0.5">
-          {displayMessage}
+          {message}
         </p>
 
         {link && (
-          isExternalLink ? (
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClassName}
-            >
-              {displayLinkLabel}
-            </a>
-          ) : (
-            <Link
-              to={link}
-              className={linkClassName}
-            >
-              {displayLinkLabel}
-            </Link>
-          )
+          <Link
+            to={link}
+            className="inline-block mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+          >
+            {linkLabel}
+          </Link>
         )}
       </div>
 
