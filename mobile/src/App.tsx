@@ -7,7 +7,7 @@ import { AssessmentScreen } from "@/screens/learning/AssessmentScreen";
 import { CertificateScreen as CompanyCertificateScreen } from "@/screens/learning/CertificateScreen";
 import { ResultsScreen } from "@/screens/learning/ResultsScreen";
 import { VideoPlayerScreen } from "@/screens/learning/VideoPlayerScreen";
-import { useMemo, type ComponentType } from "react";
+import { useEffect, useMemo, type ComponentType } from "react";
 import { Pressable, Text, View } from "react-native";
 import { signOut } from "@/api/session";
 import { AccessGate } from "@/lms/AccessGate";
@@ -57,7 +57,22 @@ import { GlobalSearchScreen } from "@/screens/search/GlobalSearchScreen";
 import { palette } from "@/theme/tokens";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+import { StaffToolsScreen } from "@/screens/staff/StaffToolsScreen";
+import { AttendanceRegisterScreen } from "@/screens/staff/AttendanceRegisterScreen";
+import { AttendanceReportScreen } from "@/screens/staff/AttendanceReportScreen";
+import { GradingQueueScreen } from "@/screens/staff/GradingQueueScreen";
+import { InstructorControlsScreen } from "@/screens/staff/InstructorControlsScreen";
+import { RbacMatrixScreen } from "@/screens/staff/RbacMatrixScreen";
+import { LiveStudioScreen } from "@/screens/staff/LiveStudioScreen";
+import { subscribeToNotificationDeepLinks } from "@/features/notifications/pushRegistration";
 
+const StaffToolsRoute = withErrorBoundary(StaffToolsScreen, "staff-tools");
+const AttendanceRegisterRoute = withErrorBoundary(AttendanceRegisterScreen, "attendance-register");
+const AttendanceReportRoute = withErrorBoundary(AttendanceReportScreen, "attendance-report");
+const GradingQueueRoute = withErrorBoundary(GradingQueueScreen, "grading-queue");
+const InstructorControlsRoute = withErrorBoundary(InstructorControlsScreen, "instructor-controls");
+const RbacMatrixRoute = withErrorBoundary(RbacMatrixScreen, "rbac-matrix");
+const LiveStudioRoute = withErrorBoundary(LiveStudioScreen, "live-studio");
 const navigationTheme = {
   ...DarkTheme,
   colors: {
@@ -344,6 +359,13 @@ export function RootNavigator() {
           name="Checkout"
           options={{ title: "Checkout" }}
         />
+        <Stack.Screen component={StaffToolsRoute} name="StaffTools" options={{ title: 'Teaching tools' }} />
+        <Stack.Screen component={LiveStudioRoute} name="LiveStudio" options={{ title: 'Live Studio' }} />
+        <Stack.Screen component={AttendanceRegisterRoute} name="AttendanceRegister" options={{ title: 'Attendance register' }} />
+        <Stack.Screen component={AttendanceReportRoute} name="AttendanceReport" options={{ title: 'Attendance report' }} />
+        <Stack.Screen component={GradingQueueRoute} name="GradingQueue" options={{ title: 'Grading queue' }} />
+        <Stack.Screen component={InstructorControlsRoute} name="InstructorControls" options={{ title: 'Instructor controls' }} />
+        <Stack.Screen component={RbacMatrixRoute} name="RbacMatrix" options={{ title: 'Role permissions' }} />
         <Stack.Screen name="Login" component={SignInScreen} options={{ title: "Sign in" }} />
         <Stack.Screen name="PaymentSuccess" component={ProtectedPaymentSuccess} options={{ title: "Payment Successful" }} />
         <Stack.Screen name="PaymentFailed" component={ProtectedPaymentFailed} options={{ title: "Payment Failed" }} />
@@ -358,6 +380,9 @@ export function RootNavigator() {
 }
 
 export function App() {
+  // Foreground notifications display through Expo; notification taps reuse the
+  // app's established deep-link paths.
+  useEffect(() => subscribeToNotificationDeepLinks(), []);
   return (
     <SafeAreaProvider>
       <ApiClientProvider>

@@ -8,6 +8,8 @@ module.exports = {
   ROOM_LEAVE: 'room:leave',
   ROOM_USER_JOINED: 'room:user_joined',
   ROOM_USER_LEFT: 'room:user_left',
+  ROOM_REPLAY_REQUEST: 'room:replay',
+  ROOM_EVENTS_REPLAYED: 'room:events_replayed',
 
   // ---- Session events (Session API integration) ----
   SESSION_STARTED: 'session:started',
@@ -28,5 +30,33 @@ module.exports = {
 
   // ---- Connection lifecycle ----
   CONNECTION_STATE_CHANGED: 'connection:state_changed',
-  // payload: { socketId, userId, status: 'connected' | 'disconnected' | 'reconnected', timestamp }
+    // payload: { socketId, userId, status: 'connected' | 'disconnected' | 'reconnected', timestamp }
+
+    NOTIFICATION_NEW: 'notification:new',
+
+    // ---- Chat events ----
+    CHAT_MESSAGE: 'chat:message',
+    // payload: { messageId, userId, roomName, text, sentAt }
+
+    // ---- Poll events ----
+    POLL_CREATE: 'poll:create',
+    // payload: { question, options: [string], roomName } -> ack returns { pollId }
+    POLL_STARTED: 'poll:started',
+    // payload: { pollId, question, options, roomName, startedAt }
+    POLL_VOTE: 'poll:vote',
+    // payload: { pollId, optionIndex, roomName }
+    POLL_RESULTS: 'poll:results',
+    // payload: { pollId, question, options, votes: { optionIndex: count }, roomName }
+    POLL_ENDED: 'poll:ended',
+    // payload: { pollId, roomName, endedAt }
+
+    // ---- Breakout room events ----
+    BREAKOUT_CREATE: 'breakout:create',
+    // payload: { roomName, groupCount } -> ack returns { groups: [{ groupName, members: [] }] }
+    BREAKOUT_STARTED: 'breakout:started',
+    // payload: { roomName, groups: [{ groupName }], startedAt }
+    BREAKOUT_ASSIGN: 'breakout:assign',
+    // payload: { roomName, groupName, userId }
+    BREAKOUT_ENDED: 'breakout:ended',
+    // payload: { roomName, endedAt }
 };

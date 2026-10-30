@@ -1,25 +1,38 @@
 /** @type {import('tailwindcss').Config} */
+const thinkzPurple = {
+  50: '#faf5ff',
+  100: '#f3e8ff',
+  200: '#e9d5ff',
+  300: '#d8b4fe',
+  400: '#c084fc',
+  500: '#a855f7',
+  600: '#7c3aed',
+  700: '#6d28d9',
+  800: '#5b21b6',
+  900: '#4c1d95',
+  950: '#2e1065',
+};
+
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
+        // Historical pages used several primary colour families. Keep their
+        // existing class names, but render each one with the Thinkz purple scale.
+        blue: thinkzPurple,
+        cyan: thinkzPurple,
+        indigo: thinkzPurple,
+        purple: thinkzPurple,
+        violet: thinkzPurple,
+        fuchsia: thinkzPurple,
+        sky: thinkzPurple,
         brand: {
-          50:  '#eff7ff',
-          100: '#dbeefe',
-          200: '#bee0fd',
-          300: '#90ccfb',
-          400: '#5cb0f6',
-          500: '#3891f0',
-          600: '#2274e7',
-          700: '#1a5fd5',
-          800: '#1c4faf',
-          900: '#1c4489',
-          950: '#152b54'
+          ...thinkzPurple,
         },
         accent: {
-          500: '#14b8a6',
-          600: '#0d9488'
+          500: '#a855f7',
+          600: '#7c3aed'
         }
       },
       fontFamily: {

@@ -6,13 +6,7 @@
     "orientation": "portrait",
     "scheme": "thinkzai",
     "userInterfaceStyle": "light",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#0B1020"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.thinkzai.mobile"
@@ -26,8 +20,6 @@
     "web": {
       "bundler": "metro"
     },
-    "plugins": [
-      "./plugins/withPatanDownloads"
-    ]
+    "plugins": ["expo-notifications", "./plugins/withPatanDownloads"]
   }
 }

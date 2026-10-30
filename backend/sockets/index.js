@@ -2,6 +2,9 @@ const jwt = require("jsonwebtoken");
 
 const EVENTS = require("./events");
 const sessionManager = require("./sessionManager");
+const chatManager = require("./chatManager");
+const pollManager = require("./pollManager");
+const breakoutManager = require("./breakoutManager");
 
 // Notification Center: forwards the live-session lifecycle to every
 // connected socket whose user has live-session notifications enabled.
@@ -25,6 +28,21 @@ const activityRateLimits = new Map();
 
 const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_MS = 10000;
+const ROOM_EVENT_HISTORY_LIMIT = 100;
+const roomEventHistory = new Map();
+// High-frequency socket logging becomes measurable under load. Keep it opt-in
+// for diagnosis instead of writing once per connection/event in normal runs.
+const debugSocket = (...args) => {
+    if (process.env.SOCKET_DEBUG === "true") console.log(...args);
+};
+
+function emitRoomEvent(io, roomName, event, payload) {
+    const entry = { event, payload, timestamp: new Date().toISOString() };
+    const history = roomEventHistory.get(roomName) || [];
+    history.push(entry);
+    roomEventHistory.set(roomName, history.slice(-ROOM_EVENT_HISTORY_LIMIT));
+    io.to(roomName).emit(event, payload);
+}
 
 
 module.exports = function (io) {
@@ -180,8 +198,13 @@ module.exports = function (io) {
                 }
             );
 
+            prevState.rooms.forEach((roomName) => {
+                const missedEvents = roomEventHistory.get(roomName) || [];
+                socket.emit(EVENTS.ROOM_EVENTS_REPLAYED, { roomName, events: missedEvents });
+            });
 
-            console.log(
+
+            debugSocket(
                 `[socket] RECONNECTED: ${socket.id} ` +
                 `(user=${userId}) — restored ` +
                 `${prevState.rooms.size} room(s)`
@@ -201,7 +224,7 @@ module.exports = function (io) {
             );
 
 
-            console.log(
+            debugSocket(
                 `[socket] connected: ${socket.id} ` +
                 `(user=${userId}, role=${role})`
             );
@@ -296,7 +319,7 @@ module.exports = function (io) {
                 });
 
 
-                console.log(
+                debugSocket(
                     `[socket] ${socket.id} ` +
                     `joined room "${roomName}"`
                 );
@@ -379,12 +402,27 @@ module.exports = function (io) {
                 });
 
 
-                console.log(
+                debugSocket(
                     `[socket] ${socket.id} ` +
                     `left room "${roomName}"`
                 );
             }
         );
+
+        // A client can explicitly request events missed while reconnecting.
+        // Replay is restricted to rooms the current socket has joined.
+        socket.on(EVENTS.ROOM_REPLAY_REQUEST, ({ roomName, after } = {}, ack) => {
+            const joinedRooms = activeConnections.get(socket.id)?.rooms;
+            if (!roomName || !joinedRooms?.has(roomName)) {
+                return ack?.({ ok: false, error: "Join the room before requesting replay" });
+            }
+            const afterTime = after ? Date.parse(after) : 0;
+            const events = (roomEventHistory.get(roomName) || []).filter((entry) =>
+                !Number.isFinite(afterTime) || Date.parse(entry.timestamp) > afterTime
+            );
+            socket.emit(EVENTS.ROOM_EVENTS_REPLAYED, { roomName, events });
+            return ack?.({ ok: true, eventCount: events.length });
+        });
 
 
         // ------------------------------------------------
@@ -477,7 +515,6 @@ module.exports = function (io) {
                                 roomName
                         );
 
-
                 userSessions.forEach(
                     (session) => {
 
@@ -494,8 +531,173 @@ module.exports = function (io) {
 
 
         // ------------------------------------------------
+        // CHAT: MESSAGE
+        // ------------------------------------------------
+
+        socket.on(EVENTS.CHAT_MESSAGE, (payload, ack) => {
+            const { roomName, text } = payload || {};
+
+            if (!roomName || !text || typeof text !== "string") {
+                return ack?.({ ok: false, error: "roomName and text are required" });
+            }
+
+            const message = chatManager.addMessage(roomName, userId, text);
+
+            emitRoomEvent(io, roomName, EVENTS.CHAT_MESSAGE, message);
+            ack?.({ ok: true, message });
+        });
+
+
+        // ------------------------------------------------
+        // POLL: CREATE
+        // ------------------------------------------------
+
+        socket.on(EVENTS.POLL_CREATE, (payload, ack) => {
+            const { roomName, question, options } = payload || {};
+
+            if (!roomName || !question || !Array.isArray(options) || options.length < 2) {
+                return ack?.({ ok: false, error: "roomName, question, and at least 2 options are required" });
+            }
+
+            const poll = pollManager.createPoll(roomName, question, options);
+
+            emitRoomEvent(io, roomName, EVENTS.POLL_STARTED, {
+                pollId: poll.pollId,
+                question: poll.question,
+                options: poll.options,
+                roomName,
+                startedAt: poll.startedAt,
+            });
+            ack?.({ ok: true, pollId: poll.pollId });
+        });
+
+
+        // ------------------------------------------------
+        // POLL: VOTE
+        // ------------------------------------------------
+
+        socket.on(EVENTS.POLL_VOTE, (payload, ack) => {
+            const { roomName, optionIndex } = payload || {};
+
+            const poll = pollManager.castVote(roomName, userId, optionIndex);
+
+            if (!poll) {
+                return ack?.({ ok: false, error: "Invalid vote (no active poll, already voted, or bad option)" });
+            }
+
+            emitRoomEvent(io, roomName, EVENTS.POLL_RESULTS, {
+                pollId: poll.pollId,
+                question: poll.question,
+                options: poll.options,
+                votes: poll.votes,
+                roomName,
+            });
+            ack?.({ ok: true });
+        });
+
+
+        // ------------------------------------------------
+        // POLL: END
+        // ------------------------------------------------
+
+        socket.on(EVENTS.POLL_ENDED, (payload, ack) => {
+            const { roomName } = payload || {};
+
+            const poll = pollManager.endPoll(roomName);
+
+            if (!poll) {
+                return ack?.({ ok: false, error: "No active poll for this room" });
+            }
+
+            emitRoomEvent(io, roomName, EVENTS.POLL_ENDED, {
+                pollId: poll.pollId,
+                roomName,
+                endedAt: new Date().toISOString(),
+            });
+
+            ack?.({ ok: true });
+        });
+
+
+        // ------------------------------------------------
+        // BREAKOUT: CREATE
+        // ------------------------------------------------
+
+        socket.on(EVENTS.BREAKOUT_CREATE, (payload, ack) => {
+            const { roomName, groupCount } = payload || {};
+
+            if (!roomName || !groupCount || groupCount < 1) {
+                return ack?.({ ok: false, error: "roomName and groupCount (>=1) are required" });
+            }
+
+            const memberSocketIds = Array.from(roomMembers.get(roomName) || []);
+            const memberUserIds = memberSocketIds
+                .map((sid) => activeConnections.get(sid)?.userId)
+                .filter(Boolean);
+
+            const breakout = breakoutManager.createBreakout(roomName, memberUserIds, groupCount);
+
+            emitRoomEvent(io, roomName, EVENTS.BREAKOUT_STARTED, {
+                roomName,
+                groups: breakout.groups,
+                startedAt: breakout.startedAt,
+            });
+
+            ack?.({ ok: true, groups: breakout.groups });
+        });
+
+
+        // ------------------------------------------------
+        // BREAKOUT: ASSIGN
+        // ------------------------------------------------
+
+        socket.on(EVENTS.BREAKOUT_ASSIGN, (payload, ack) => {
+            const { roomName, groupName, userId: targetUserId } = payload || {};
+
+            const breakout = breakoutManager.assignUser(roomName, groupName, targetUserId || userId);
+
+            if (!breakout) {
+                return ack?.({ ok: false, error: "No active breakout or group not found" });
+            }
+
+            emitRoomEvent(io, roomName, EVENTS.BREAKOUT_ASSIGN, {
+                roomName,
+                groupName,
+                userId: targetUserId || userId,
+            });
+
+            ack?.({ ok: true, groups: breakout.groups });
+        });
+
+
+        // ------------------------------------------------
+        // BREAKOUT: END
+        // ------------------------------------------------
+
+        socket.on(EVENTS.BREAKOUT_ENDED, (payload, ack) => {
+            const { roomName } = payload || {};
+
+            const breakout = breakoutManager.endBreakout(roomName);
+
+            if (!breakout) {
+                return ack?.({ ok: false, error: "No active breakout for this room" });
+            }
+
+            emitRoomEvent(io, roomName, EVENTS.BREAKOUT_ENDED, {
+                roomName,
+                endedAt: new Date().toISOString(),
+            });
+
+            ack?.({ ok: true });
+        });
+
+
+        // ------------------------------------------------
         // DISCONNECT
         // ------------------------------------------------
+
+
+
 
         socket.on(
             "disconnect",
@@ -551,7 +753,7 @@ module.exports = function (io) {
                                 );
 
 
-                                console.log(
+                                debugSocket(
                                     `[socket] grace period ` +
                                     `expired for user=${userId} ` +
                                     `— fully removed`
@@ -585,7 +787,7 @@ module.exports = function (io) {
                 );
 
 
-                console.log(
+                debugSocket(
                     `[socket] disconnected: ` +
                     `${socket.id} ` +
                     `(reason: ${reason}) ` +

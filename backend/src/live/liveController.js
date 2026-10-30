@@ -1,4 +1,5 @@
 const service = require("./liveService");
+const jwt = require("jsonwebtoken");
 
 /**
  * HTTP controllers for the Live Class Studio (self-contained Forum module).
@@ -19,6 +20,9 @@ function handleError(res, error, defaultMessage) {
     if (error && error.code === "VALIDATION") {
         return res.status(400).json({ success: false, message: error.message });
     }
+    if (error && error.code === "FORBIDDEN") {
+        return res.status(403).json({ success: false, message: error.message });
+    }
     console.error(defaultMessage, error);
     return res.status(500).json({ success: false, message: defaultMessage });
 }
@@ -35,6 +39,45 @@ function joinSession(req, res) {
         .joinSession(req.params.id, req.user)
         .then((session) => res.status(200).json({ success: true, data: session }))
         .catch((error) => handleError(res, error, "Failed to join session"));
+}
+
+function canManageSession(user) {
+    return ["INSTRUCTOR", "ADMIN"].includes(String(user && user.role || "").toUpperCase());
+}
+
+function updateSessionStatus(req, res) {
+    if (!canManageSession(req.user)) {
+        const error = new Error("Only an Instructor or Admin can schedule, start, or end a live class");
+        error.code = "FORBIDDEN";
+        return handleError(res, error, "Failed to update session status");
+    }
+    return service
+        .updateSessionStatus(
+            req.params.id,
+            req.body && req.body.status,
+            req.body && req.body.scheduledAt
+        )
+        .then((session) => {
+            const io = req.app.get("io");
+            if (io) io.of("/studio").to(req.params.id).emit("session:state", session);
+            return res.status(200).json({ success: true, data: session });
+        })
+        .catch((error) => handleError(res, error, "Failed to update session status"));
+}
+
+function createJitsiToken(req, res) {
+    const secret = process.env.JITSI_JWT_SECRET;
+    const appId = process.env.JITSI_APP_ID;
+    const domain = process.env.JITSI_DOMAIN;
+    if (!secret || !appId || !domain) {
+        return res.status(503).json({ success: false, message: "Jitsi is not configured for this environment" });
+    }
+    const room = `thinkz-${String(req.params.id).replace(/[^a-z0-9_-]/gi, "-")}`;
+    const token = jwt.sign({
+        aud: "jitsi", iss: appId, sub: domain, room,
+        context: { user: { id: String(req.user.id), name: req.user.name || "Participant" } },
+    }, secret, { expiresIn: "10m" });
+    return res.status(200).json({ success: true, data: { room, token, expiresInSeconds: 600 } });
 }
 
 function getMessages(req, res) {
@@ -109,6 +152,8 @@ function leaveBreakoutRoom(req, res) {
 module.exports = {
     getSession,
     joinSession,
+    updateSessionStatus,
+    createJitsiToken,
     getMessages,
     sendMessage,
     deleteMessage,

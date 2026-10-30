@@ -1,5 +1,9 @@
 import { selectUser } from '../../features/auth/authSlice';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { notificationReceived, showToast } from '../../features/preferenceNotification/preferenceNotificationSlice';
 import { useLiveSessionNotifications } from '../../hooks/useLiveSessionNotifications';
+import { useForumSocket } from '../../hooks/useForumSocket';
 
 /**
  * Global provider for the Live Session Notification Center.
@@ -17,10 +21,6 @@ function LiveSessionLifecycleListener() {
 
   return null;
 }
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { notificationReceived, showToast } from '../../features/preferenceNotification/preferenceNotificationSlice';
-import { useForumSocket } from '../../hooks/useForumSocket';
 
 function ForumLiveSessionListener() {
   const dispatch = useDispatch();
