@@ -2,7 +2,9 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { useCallback, useState, type PropsWithChildren } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/common/AppButton";
-import { palette } from "@/theme/tokens";
+import type { Palette } from "@/theme/tokens";
+import { useTheme } from "@/theme/ThemeProvider";
+import { useThemedStyles } from "@/theme/useThemedStyles";
 import { exportAnalytics } from "../analyticsExport";
 import { DateField } from "../DateField";
 import { lmsApi } from "../api";
@@ -10,7 +12,7 @@ import { HANDOVER_READ_API } from '../deployment';
 import { useLms } from "../LmsProvider";
 import type { Analytics, AnalyticsBucket, ReportStatus } from "../types";
 import { useLmsResource } from "../useLmsResource";
-import { LoadState, Message, Screen, styles } from "../ui";
+import { LoadState, Message, Screen, useLmsStyles } from "../ui";
 
 const date = (value: Date) => value.toISOString().slice(0, 10);
 const buckets: AnalyticsBucket[] = ["daily", "weekly", "monthly", "quarterly"];
@@ -20,6 +22,7 @@ const isDate = (value: string) =>
   Number.isFinite(Date.parse(value)) &&
   date(new Date(value)) === value;
 function Panel({ children }: PropsWithChildren) {
+  const layout = useThemedStyles(createLayout);
   return <View style={layout.panel}>{children}</View>;
 }
 
@@ -45,6 +48,8 @@ function EnrollmentChart({
   trend: Analytics["trend"];
   bucket: AnalyticsBucket;
 }) {
+  const layout = useThemedStyles(createLayout);
+  const styles = useLmsStyles();
   const maximum = Math.max(1, ...trend.map((point) => point.count));
   return (
     <Panel>
@@ -103,6 +108,8 @@ const columns: { key: SortColumn; label: string }[] = [
 const completion = (course: Analytics["courses"][number]) =>
   course.enrollments ? (course.completed / course.enrollments) * 100 : 0;
 function CourseTable({ courses }: { courses: Analytics["courses"] }) {
+  const layout = useThemedStyles(createLayout);
+  const styles = useLmsStyles();
   const [sort, setSort] = useState<SortColumn>("enrollments");
   const [ascending, setAscending] = useState(false);
   const sorted = [...courses].sort((a, b) => {
@@ -189,6 +196,8 @@ function CourseTable({ courses }: { courses: Analytics["courses"] }) {
 }
 
 function DeliveryStatus({ data }: { data: ReportStatus }) {
+  const layout = useThemedStyles(createLayout);
+  const styles = useLmsStyles();
   const latest = data.recent[0];
   const label = !data.enabled
     ? "Scheduled reports are off"
@@ -236,9 +245,12 @@ function DeliveryStatus({ data }: { data: ReportStatus }) {
 }
 
 export function AnalyticsScreen() {
+  const { palette } = useTheme();
+  const layout = useThemedStyles(createLayout);
+  const styles = useLmsStyles();
   const { session } = useLms();
-  const [from, setFrom] = useState(date(new Date(Date.now() - 29 * 86400000)));
-  const [to, setTo] = useState(date(new Date()));
+  const [from, setFrom] = useState(() => date(new Date(Date.now() - 29 * 86400000)));
+  const [to, setTo] = useState(() => date(new Date()));
   const [range, setRange] = useState({ from, to });
   const [bucket, setBucket] = useState<AnalyticsBucket>("daily");
   const [dateError, setDateError] = useState("");
@@ -487,7 +499,7 @@ export function AnalyticsScreen() {
   );
 }
 
-const layout = StyleSheet.create({
+const createLayout = (palette: Palette) => StyleSheet.create({
   panel: {
     backgroundColor: palette.surface,
     borderColor: palette.border,

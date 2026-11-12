@@ -37,14 +37,17 @@ export function useProgressSync(session: SessionState, online: boolean, role: st
       if (queue.length) setSyncStatus(`Syncing ${queue.length} update(s)...`);
       let conflicts = 0;
       let batches = 0;
+      let stalled = false;
       while (
-        queue.length && batches < 10 && currentOnline.current &&
+        queue.length &&
+        batches < 10 &&
         getSession().userId === userId &&
         getSession().token === token &&
         accountRole.current !== null &&
         !isAdministrator(accountRole.current)
       ) {
-        const previousQueue = JSON.stringify(queue);
+        batches += 1;
+        const beforeBatch = JSON.stringify(queue);
         const sent = queue.slice(0, 100);
         batches++;
         const result = await lmsApi.sync(sent, token);
@@ -58,12 +61,22 @@ export function useProgressSync(session: SessionState, online: boolean, role: st
         }));
         await acknowledgeProgress(userId, sent, result);
         queue = await loadQueue(userId);
-        if (JSON.stringify(queue) === previousQueue) break;
+        if (JSON.stringify(queue) === beforeBatch) {
+          // The queue did not change even though the batch completed. Stop
+          // instead of retrying the same records in a tight loop.
+          stalled = true;
+          break;
+        }
       }
       if (currentOnline.current && getSession().userId === userId && getSession().token === token)
         setSyncStatus(
-          queue.length ? "Progress saved on device; some updates are pending. Tap Sync progress to retry." :
-          conflicts ? "Synced; newer server progress kept." : "Up to date",
+          stalled
+            ? "Some progress could not be confirmed; sync will retry."
+            : queue.length
+              ? "Progress synced; remaining updates will send shortly."
+              : conflicts
+                ? "Synced; newer server progress kept."
+                : "Up to date",
         );
     } catch (e) {
       if (currentOnline.current && getSession().userId === userId && getSession().token === token)

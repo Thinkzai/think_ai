@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
-  ListViewToken,
+  type ListViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

@@ -1,13 +1,49 @@
 const sgMail = require('@sendgrid/mail');
+const twilio = require('twilio');
 require('dotenv').config();
 
-// Configure SendGrid API Key
+// Configure providers only when credentials exist so offline/test imports do
+// not trigger SDK configuration errors.
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-// Configure Twilio Client
-let twilioClient;
+// Configure Twilio Client (guarded)
+let twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character]);
+}
+
+function enrollmentConfirmationEmail({ name, courseName }) {
+  const learnerName = String(name || 'Learner');
+  const title = String(courseName || 'your course');
+  return {
+    subject: `Enrollment confirmed: ${title}`,
+    text: `Hello ${learnerName}, your enrollment in ${title} is confirmed.`,
+    html: `<p>Hello ${escapeHtml(learnerName)},</p><p>Your enrollment in <strong>${escapeHtml(title)}</strong> is confirmed.</p>`,
+  };
+}
+
+function certificateEmail({ name, courseName, certificateId, certificateUrl }) {
+  const learnerName = String(name || 'Learner');
+  const title = String(courseName || 'your course');
+  const identifier = String(certificateId || '');
+  const verificationUrl = String(certificateUrl || '');
+  return {
+    subject: `Certificate awarded: ${title}`,
+    text: `Hello ${learnerName}, your certificate for ${title} is ready. Certificate ID: ${identifier}. Verify it at ${verificationUrl}`,
+    html: `<p>Hello ${learnerName},</p><p>Your certificate for <strong>${escapeHtml(title)}</strong> is ready.</p><p>Certificate ID: <strong>${escapeHtml(identifier)}</strong></p><p><a href="${escapeHtml(verificationUrl)}">Verify certificate</a></p>`,
+  };
+}
 
 // Function to send a test email via SendGrid
 async function sendTestEmail(toEmail) {
@@ -23,23 +59,17 @@ async function sendTestEmail(toEmail) {
 // Function to send a test SMS via Twilio
 async function sendTestSMS(toPhone) {
   if (!twilioClient) {
-    twilioClient = require('twilio')(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+      twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    } else {
+      throw new Error('Twilio is not configured.');
+    }
   }
   return twilioClient.messages.create({
     body: "Janadeep's Twilio SMS notification.",
     from: process.env.TWILIO_PHONE_NUM,
     to: toPhone
   });
-}
-
-// Export the functions for use in other files
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  })[character]);
 }
 
 async function sendEmail({ to, subject, text, html }) {
@@ -50,28 +80,17 @@ async function sendEmail({ to, subject, text, html }) {
   return sgMail.send({ to, from: process.env.FROM_EMAIL, subject, text, ...(html ? { html } : {}) });
 }
 
-function enrollmentConfirmationEmail({ name, courseName }) {
-  return {
-    subject: `Enrollment Confirmed - ${courseName}`,
-    text: `Hello ${name}, your enrollment in ${courseName} has been confirmed.`,
-    html: `<h2>Enrollment Confirmed</h2><p>Hello ${escapeHtml(name)}, your enrollment in ${escapeHtml(courseName)} has been confirmed.</p>`,
-  };
-}
-
-function certificateEmail({ name, courseName, certificateId, certificateUrl }) {
-  return {
-    subject: `Certificate Issued - ${courseName}`,
-    text: `Hello ${name}, your certificate for ${courseName} has been issued. Certificate ID: ${certificateId}. Certificate: ${certificateUrl}`,
-    html: `<h2>Congratulations, ${escapeHtml(name)}!</h2><p>Your certificate for ${escapeHtml(courseName)} has been issued.</p><p>Certificate ID: ${escapeHtml(certificateId)}</p><p><a href="${escapeHtml(certificateUrl)}">Download Certificate</a></p>`,
-  };
-}
-
 const sendEnrollmentConfirmationEmail = ({ to, ...details }) =>
   sendEmail({ to, ...enrollmentConfirmationEmail(details) });
 const sendCertificateEmail = ({ to, ...details }) =>
   sendEmail({ to, ...certificateEmail(details) });
 
 module.exports = {
-  sendTestEmail, sendTestSMS, sendEmail, enrollmentConfirmationEmail,
-  certificateEmail, sendEnrollmentConfirmationEmail, sendCertificateEmail,
+  sendTestEmail,
+  sendTestSMS,
+  sendEmail,
+  enrollmentConfirmationEmail,
+  certificateEmail,
+  sendEnrollmentConfirmationEmail,
+  sendCertificateEmail,
 };

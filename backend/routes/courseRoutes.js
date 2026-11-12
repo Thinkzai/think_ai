@@ -13,10 +13,12 @@ const {
     getCourseBatches
 } = require("../controllers/courseController");
 const {
-  validateCourseCreate,
-  validateCourseUpdate,
-  validateCourseId
+    validateCourseCreate,
+    validateCourseUpdate,
+    validateCourseId,
+    validateCourseParamId
 } = require("../validations/courseValidation");
+
 /**
  * @swagger
  * tags:
@@ -55,7 +57,7 @@ router.get("/", getCourses);
  *       404:
  *         description: Course not found
  */
-router.get("/:id", getCourseById);
+router.get("/:id", validateCourseId, getCourseById);
 
 /**
  * @swagger
@@ -101,7 +103,13 @@ router.get("/:id", getCourseById);
  *       201:
  *         description: Course created successfully
  */
-router.post("/", createCourse);
+router.post(
+    "/",
+    authenticateToken,
+    authorizeRoles('ADMIN'),
+    validateCourseCreate,
+    createCourse
+);
 
 /**
  * @swagger
@@ -148,7 +156,6 @@ router.post("/", createCourse);
  *       200:
  *         description: Course updated successfully
  */
-router.put("/:id", updateCourse);
 router.put(
     "/:id",
     authenticateToken,
@@ -178,7 +185,6 @@ router.put(
  *       404:
  *         description: Course not found
  */
-router.delete("/:id", deleteCourse);
 router.delete(
     "/:id",
     authenticateToken,
@@ -204,6 +210,6 @@ router.delete(
  *       200:
  *         description: List of batches
  */
-router.get("/:courseId/batches", getCourseBatches);
+router.get("/:courseId/batches", validateCourseParamId, getCourseBatches);
 
 module.exports = router;

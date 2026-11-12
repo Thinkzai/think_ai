@@ -14,10 +14,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppButton } from "@/components/common/AppButton";
 import { AppIcon, screenIcon } from "@/components/common/AppIcon";
 import { palette } from "@/theme/tokens";
+import type { Palette } from "@/theme/tokens";
+import { useTheme } from "@/theme/ThemeProvider";
+import { useThemedStyles } from "@/theme/useThemedStyles";
 import { login } from "./api";
 import { useLms } from "./LmsProvider";
 import { isAdministrator } from "./access";
-export const styles = StyleSheet.create({
+export const createLmsStyles = (palette: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.background },
   content: { padding: 20, gap: 16, paddingBottom: 32, width: '100%', maxWidth: 960, alignSelf: 'center' },
   card: {
@@ -55,10 +58,17 @@ export const styles = StyleSheet.create({
     color: palette.accent,
   },
 });
+/** Dark fallback remains for non-component consumers; app components should use the hook. */
+export const styles = createLmsStyles(palette);
+export function useLmsStyles() {
+  return useThemedStyles(createLmsStyles);
+}
 export function Field({
   label,
   ...props
 }: React.ComponentProps<typeof TextInput> & { label: string }) {
+  const styles = useLmsStyles();
+  const { palette } = useTheme();
   return (
     <View style={{ gap: 6 }}>
       <Text style={styles.muted}>{label}</Text>
@@ -78,6 +88,7 @@ export function Message({
   text: string;
   error?: boolean;
 }) {
+  const styles = useLmsStyles();
   return (
     <Text
       accessibilityLiveRegion="polite"
@@ -88,6 +99,7 @@ export function Message({
   );
 }
 export function LoginForm() {
+  const styles = useLmsStyles();
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [error, setError] = useState(""),
@@ -134,6 +146,7 @@ export function Screen({
   children,
   scrollRef,
 }: PropsWithChildren<{ title: string; scrollRef?: Ref<ScrollViewInstance> }>) {
+  const styles = useLmsStyles();
   const { session, ready, online, syncStatus, account } = useLms();
   const admin = isAdministrator(account?.role);
   return (
@@ -178,6 +191,7 @@ export function Screen({
   );
 }
 export function Card({ children }: PropsWithChildren) {
+  const styles = useLmsStyles();
   return <View style={styles.card}>{children}</View>;
 }
 export function LoadState({

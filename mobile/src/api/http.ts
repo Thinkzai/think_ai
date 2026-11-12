@@ -1,17 +1,61 @@
 import { getSession, restoreSession } from './session';
-import { DEPLOYMENT_API } from '@/lms/deployment';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 /**
  * Minimal `fetch` transport for Pages 6–10.
  *
  * Contract (confirmed against `think_ai/backend`):
- *   - Base URL: `EXPO_PUBLIC_API_URL` (default `http://localhost:5000/api`).
- *   - Auth: `x-user-id` header identifies the caller; an `Authorization`
- *     bearer token is attached whenever a session carries one.
+ *   - Base URL: `EXPO_PUBLIC_API_URL` when configured. Expo Go on a physical
+ *     device uses the LAN host serving Metro; Android emulators use 10.0.2.2.
+ *   - Auth: a bearer token proves identity; `x-user-id` is retained only for
+ *     local fixture compatibility and is ignored by authenticated routes.
  *   - Envelope: success `{ success: true, data, ...extras }`,
  *     failure `{ success: false, message, ...extras }` with 4xx/5xx.
  */
-export const API_BASE_URL: string = DEPLOYMENT_API;
+function getExpoLanHost(hostUri?: string | null): string | null {
+  const authority = hostUri
+    ?.trim()
+    .replace(/^[a-z][a-z\d+.-]*:\/\//i, '')
+    .split(/[/?#]/, 1)[0];
+  const host = authority?.split(':', 1)[0];
+  if (!host || !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) return null;
+
+  const octets = host.split('.').map(Number);
+  if (
+    octets.some((octet) => octet > 255) ||
+    octets[0] === 0 ||
+    octets[0] === 127 ||
+    (octets[0] === 169 && octets[1] === 254)
+  ) {
+    return null;
+  }
+  return host;
+}
+
+export function resolveApiBaseUrl(
+  platform: typeof Platform.OS,
+  configuredUrl?: string,
+  expoHostUri?: string | null,
+): string {
+  const configured = configuredUrl?.trim().replace(/\/+$/, '');
+  if (configured) {
+    return /\/api$/i.test(configured) ? configured : `${configured}/api`;
+  }
+
+  const expoHost = getExpoLanHost(expoHostUri);
+  if (expoHost && (platform === 'android' || platform === 'ios')) {
+    return `http://${expoHost}:5000/api`;
+  }
+  if (platform === 'android') return 'http://10.0.2.2:5000/api';
+  return 'http://localhost:5000/api';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl(
+  Platform.OS,
+  process.env.EXPO_PUBLIC_API_URL,
+  Constants.expoConfig?.hostUri,
+);
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -32,6 +76,7 @@ export interface RequestOptions {
   method?: HttpMethod;
   body?: unknown;
   query?: Record<string, QueryValue>;
+  signal?: AbortSignal;
 }
 
 /** HTTP + payload error carrying the raw body so callers can branch on `status`. */
@@ -89,8 +134,12 @@ export async function apiRequest<T>(
       method,
       headers: await buildHeaders(hasBody),
       body: hasBody ? JSON.stringify(body) : undefined,
+      signal: options.signal,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
     throw new ApiError('Network error — is the backend running?', 0, null);
   }
 
@@ -103,7 +152,8 @@ export async function apiRequest<T>(
 
   if (!response.ok || payload?.success === false) {
     const message =
-      payload?.message ?? `Request failed (${response.status})`;
+      payload?.message ??
+      (typeof payload?.error === 'string' ? payload.error : `Request failed (${response.status})`);
     throw new ApiError(message, response.status, payload);
   }
 

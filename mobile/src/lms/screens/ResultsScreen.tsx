@@ -3,11 +3,12 @@ import { Text } from "react-native";
 import { AppButton } from "@/components/common/AppButton";
 import type { ScreenProps } from "@/navigation/types";
 import { lmsApi } from "../api";
-import { Card, LoadState, Message, Screen, styles } from "../ui";
+import { Card, LoadState, Message, Screen, useLmsStyles } from "../ui";
 export function AssessmentResultsScreen({
   route,
   navigation,
 }: ScreenProps<"AssessmentResults">) {
+  const styles = useLmsStyles();
   const resource = useAssessmentResults(route.params.attemptId);
   const result = resource.data;
   return (
@@ -15,11 +16,23 @@ export function AssessmentResultsScreen({
       <LoadState {...resource} retry={resource.refresh} />
       {result && !["GRADED", "FAILED"].includes(result.status) ? (
         <Card>
-          <Text style={styles.heading}>Your answers are being graded</Text>
-          <Message text={resource.polling
-            ? "Coding questions run in the remote sandbox. Checking results automatically."
-            : "Automatic checks have stopped. Your submission is retained; check again when ready."} />
-          <AppButton title="Check now" variant="secondary" disabled={resource.loading} onPress={() => void resource.checkNow()} />
+          <Text style={styles.heading}>
+            {resource.polling ? "Your answers are being graded" : "Automatic updates paused"}
+          </Text>
+          <Message
+            text={
+              resource.polling
+                ? "Coding questions run in the remote sandbox. This page updates automatically."
+                : "This page stopped checking automatically to save battery and data. Tap check now to refresh the result."
+            }
+          />
+          {!resource.polling ? (
+            <AppButton
+              title="Check now"
+              variant="secondary"
+              onPress={() => void resource.refresh()}
+            />
+          ) : null}
         </Card>
       ) : null}
       {result?.status === "FAILED" ? (

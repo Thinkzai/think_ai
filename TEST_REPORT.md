@@ -1,3 +1,47 @@
+# Current Android and backend verification
+
+Date: 2026-11-08
+
+For the full website-to-Android comparison and outstanding blockers, see
+[mobile/FEATURE_PARITY_REPORT.md](mobile/FEATURE_PARITY_REPORT.md).
+For the detailed Android technical audit and prioritized findings, see
+[mobile/TECHNICAL_AUDIT_REPORT.md](mobile/TECHNICAL_AUDIT_REPORT.md).
+
+## Current verification
+
+- Mobile TypeScript passed with 0 errors.
+- Mobile Jest passed: 77 suites and 709 tests (2026-11-08).
+- Mobile TypeScript passed with 0 errors; ESLint passed with 0 errors and 56
+  warnings (2026-11-08).
+- Expo config resolves; production EAS HTTPS URL validation and cleartext-off
+  behavior passed. Android Expo export passed and emitted a roughly 3 MB Hermes bundle from
+  1,188 modules. This verifies the JS/Hermes export, not a signed APK/AAB.
+- Root community website tests passed: 10 files and 111 tests. They were run
+  with the installed Vitest binary and a temporary config because the root
+  community app has no test script or local test dependency set.
+- The `frontend/` LMS production build passed. Its lint command currently
+  reports 319 errors and 19 warnings.
+- Backend unit tests passed: 62 passed, 0 failed, 1 skipped. The skipped auth
+  E2E requires `E2E_BASE_URL` and a separately running backend.
+- LMS backend tests passed: 166 tests.
+- Backend route smoke tests passed: 15 tests in test-only in-memory community
+  mode. With the configured PostgreSQL community router, their `u1` placeholder
+  account is rejected as invalid; that run does not verify production DB routes.
+- PostgreSQL LMS integration tests skipped because a dedicated
+  `LMS_TEST_DATABASE_URL` is not configured. No DB writes were run as part of
+  this audit.
+- ADB starts outside the sandbox but reports no connected devices. Java and
+  Gradle are unavailable and `mobile/android` is absent, so APK/AAB and physical
+  screenshot verification are not complete.
+- The LMS frontend has active learner/instructor/TA placeholders and a legacy
+  nested-router issue. Community persistence also differs: the root web forum
+  uses browser storage, while Android calls backend APIs.
+
+Older backend/schema and migration validation history remains below; the
+2026-11-08 parity report records the scope and current acceptance status.
+
+## Earlier module test report
+
 # Roopesh + Karthik module test report
 
 Date: 2026-09-08

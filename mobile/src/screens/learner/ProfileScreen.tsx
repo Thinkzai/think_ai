@@ -26,11 +26,14 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
   const styles = useThemedStyles(createStyles);
   const { mode, setMode } = useTheme();
   const session = useSession();
-  const profile = useMemo(() => getLearnerProfile(session.userId), [session.userId]);
+  const profile = useMemo(
+    () => getLearnerProfile(session.userId, session.profile),
+    [session.profile, session.userId]
+  );
   const { enrollments, isLoading } = useEnrollments();
   const { count: wishlistCount } = useWishlist();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [showAppearance, setShowAppearance] = useState(false);
+  const [showTheme, setShowTheme] = useState(false);
 
   const completed = enrollments.filter(
     (enrollment) => enrollment.status === 'completed'
@@ -86,7 +89,7 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
               {profile.email}
             </Text>
             <Text style={styles.meta}>
-              {profile.role} • {profile.batch}
+              {profile.role} • {enrollments[0]?.batchName ?? profile.batch}
             </Text>
           </View>
         </View>
@@ -141,14 +144,14 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
         </View>
 
         <View style={styles.section}>
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: showAppearance }} accessibilityLabel="Appearance settings" onPress={() => setShowAppearance((visible) => !visible)} style={styles.appearanceHeading} testID="profile-appearance-toggle">
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: showTheme }} accessibilityLabel="Theme settings" onPress={() => setShowTheme((visible) => !visible)} style={styles.appearanceHeading} testID="profile-appearance-toggle">
             <View>
-              <Text style={styles.sectionTitle}>Appearance</Text>
+              <Text style={styles.sectionTitle}>Theme</Text>
               <Text style={styles.appearanceSummary}>Current theme: {mode === 'light' ? 'Light' : 'Dark'}</Text>
             </View>
-            <Text style={styles.chevron}>{showAppearance ? '⌃' : '⌄'}</Text>
+            <Text style={styles.chevron}>{showTheme ? '⌃' : '⌄'}</Text>
           </Pressable>
-          {showAppearance ? (
+          {showTheme ? (
             <View style={styles.themeRow} testID="profile-theme-options">
               {THEME_OPTIONS.map((option) => {
                 const selected = mode === option.mode;

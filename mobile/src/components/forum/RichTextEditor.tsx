@@ -6,8 +6,8 @@ import {
   Text,
   TextInput,
   View,
-  type TextInputSelectionChangeEvent,
   type TextInputInstance,
+  type TextInputSelectionChangeEvent,
 } from 'react-native';
 
 import { useApiClient } from '@/hooks/useApiClient';

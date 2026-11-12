@@ -86,6 +86,8 @@ export interface Enrollment {
   lastAccessedAt: string;
   /** Lesson ids the learner has completed; used by the player and My Learning. */
   completedLessonIds?: string[];
+  /** Most recently updated unfinished lesson, used by Resume Learning. */
+  resumeLessonId?: string;
 }
 
 export interface UpdateLessonProgressInput {
@@ -115,6 +117,9 @@ export interface SearchResult {
   subtitle: string;
   /** Route the result navigates to when tapped. */
   href: string;
+  courseId?: string;
+  lessonId?: string;
+  assessmentId?: string;
 }
 
 export interface GlobalSearchResponse {
@@ -127,6 +132,8 @@ export interface ForumCategory {
   name: string;
   slug: string;
   color: string;
+  description?: string;
+  discussionCount?: number;
 }
 
 export interface ForumAuthor {
