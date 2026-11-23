@@ -11,7 +11,7 @@ RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 
-RUN npm ci --ignore-scripts \
+RUN npm install --legacy-peer-deps --ignore-scripts \
     && npx prisma generate \
     && npm prune --omit=dev \
     && rm -rf \
