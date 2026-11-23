@@ -15,38 +15,50 @@
 
 ---
 
-## 2. Required Network Ports (Jitsi Security Group)
+## 2. Network Ports & UFW Firewall (Verified Active)
 
-| Port / Protocol | Purpose |
-|---|---|
-| `80/TCP` | HTTP (ACME / HTTPS redirect) |
-| `443/TCP` | HTTPS Web UI & XMPP signaling |
-| `10000/UDP` | Jitsi Videobridge (JVB) WebRTC media streams |
-| `4443/TCP` | Fallback media over TCP |
+| Port / Protocol | Source | Purpose |
+|---|---|---|
+| `80/TCP` | Anywhere | HTTP (ACME / HTTPS redirect) |
+| `443/TCP` | Anywhere | HTTPS Web UI & XMPP signaling (`HTTP/2 200` verified) |
+| `10000/UDP` | Anywhere | Jitsi Videobridge (JVB) WebRTC media streams |
+| `4443/TCP` | Anywhere | Fallback media over TCP |
+| `5222/TCP` | `172.31.0.50` only | XMPP control restricted to `ThinkzAI-Jibri` |
 
 ---
 
-## 3. CloudWatch Monitoring & Logs
+## 3. CloudWatch Monitoring, Colibri Stats & Logs
 
 ### Active Log Groups
 - `/thinkz/prod/jitsi` — Jitsi Meet signaling & videobridge logs
 - `/thinkzai/jibri/chromedriver` — Jibri ChromeDriver logs
 - `/thinkzai/jibri/xorg` — Jibri virtual display logs
 
-### Active CloudWatch Alarm
-- **`Thinkz-Jitsi-CPU-High`** — Alerts when `ThinkzAI-Jitsi` CPU exceeds 80% for 5 minutes (State: `OK`).
+### Active Metrics & Alarms
+- **CloudWatch Alarm:** `Thinkz-Jitsi-CPU-High` (>80% CPU for 5 min, State: `OK`)
+- **JVB Colibri Stats:** Active at `http://127.0.0.1:8080/colibri/stats` (`0.0%` packet loss verified)
 
 ---
 
-## 4. Verification & Pending Sign-Off Checklist
+## 4. Jibri Recording → S3 Automation (Verified Active)
+
+- **Jibri Health API:** `http://127.0.0.1:2222/jibri/api/v1.0/health` → `IDLE` / `HEALTHY`
+- **IAM Role:** `ThinkzAI-Jibri-Role` (least-privilege scoped to S3 recordings bucket)
+- **Finalize Hook:** `/usr/local/bin/thinkz-jibri-finalize.sh`
+- **Automated S3 Sync:** `thinkz-jibri-s3-upload.timer` (active, runs every 15 min)
+- **Verified Upload:** `rkjibritest_2026-11-09-11-45-41.mp4` (`111,086 bytes`) + SHA-256 verification marker confirmed in `/srv/recordings/`
+
+---
+
+## 5. Verification Checklist
 
 | Item | Status |
 |---|---|
-| `ThinkzAI-Jitsi` (`t3.medium`) provisioned & running | Done |
-| `ThinkzAI-Jibri` (`t3.xlarge`) provisioned & running | Done |
-| CloudWatch Log Groups (`/thinkz/prod/jitsi`, Jibri logs) active | Done |
-| CloudWatch Alarm (`Thinkz-Jitsi-CPU-High`) active | Done |
-| Backend-generated JWT verification & Prosody JWT enforcement | Pending final backend PR & rollout |
-| Jibri recording end-to-end MP4 upload to S3 verification | Pending QA test session |
-| 10-concurrent-user 15-minute baseline load test | Pending scheduling |
-| Custom domain (`live.thinkzai.com`) Route 53 A record + ACM SSL | Pending final domain confirmation |
+| `ThinkzAI-Jitsi` (`t3.medium`) provisioned, all 5 services active & HTTPS `200` | Done |
+| `ThinkzAI-Jibri` (`t3.xlarge`) provisioned, `IDLE` & `HEALTHY` | Done |
+| UFW firewall configured (including `5222/TCP` locked to Jibri IP) | Done |
+| CloudWatch Log Groups, CPU Alarm & JVB `/colibri/stats` active | Done |
+| Jibri recording end-to-end MP4 upload to S3 with SHA-256 verification | Done |
+| 10-concurrent-user signaling baseline load test (`infra/jitsi-load-test-baseline.md`) | Done (`53.4 ms` P95, `0%` errors) |
+| Prosody JWT enforcement (`authentication = "token"`) | Waiting on backend JWT rollout (do not enable early to avoid locking rooms) |
+| Custom domain (`live.thinkzai.com`) Route 53 A record + ACM SSL | Waiting on purchased domain confirmation |
