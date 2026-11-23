@@ -13,6 +13,12 @@ const {
     autoAllocateStudent
 } = require("../controllers/batchController");
 
+const {
+    validateBatchCreate,
+    validateBatchUpdate,
+    validateBatchId
+} = require("../validations/batchValidation");
+
 /**
  * @swagger
  * tags:
@@ -240,7 +246,7 @@ router.delete(
 /**
  * @swagger
  * /api/batches/{batchId}/enrollments:
- *   get:
+*   get:
  *     summary: Get all enrollments of a batch
  *     tags: [Batches]
  *     parameters:
@@ -255,5 +261,4 @@ router.delete(
  *         description: List of enrollments
  */
 router.get("/:batchId/enrollments", getBatchEnrollments);
-
 module.exports = router;
