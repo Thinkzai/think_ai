@@ -95,7 +95,9 @@ beforeEach(() => {
     assert.ok(String(url).startsWith('http://judge0.invalid/'));
     state.judgeCalls.push({ url, body: options.body && JSON.parse(options.body) });
     if (options.method === 'POST') return { ok: true, json: async () => ({ token: `test-${state.judgeCalls.length}` }) };
-    return { ok: true, json: async () => ({ status: { id: state.judgeStatus, description: state.judgeStatus === 3 ? 'Accepted' : 'Compilation Error' }, stdout: state.output, stderr: null, time: '0.01', memory: 1000 }) };
+    const stdout = new URL(url).searchParams.get('base64_encoded') === 'true'
+      ? Buffer.from(state.output, 'utf8').toString('base64') : state.output;
+    return { ok: true, json: async () => ({ status: { id: state.judgeStatus, description: state.judgeStatus === 3 ? 'Accepted' : 'Compilation Error' }, stdout, stderr: null, time: '0.01', memory: 1000 }) };
   };
 });
 after(() => {

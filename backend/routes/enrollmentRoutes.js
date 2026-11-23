@@ -2,6 +2,11 @@ const express = require("express");
 
 const router = express.Router();
 const { authenticateToken, authorizeRoles } = require("../middleware/lmsLegacyAccess");
+const {
+    validateEnrollmentCreate,
+    validateEnrollmentUpdate,
+    validateEnrollmentId
+} = require("../validations/enrollmentValidation");
 
 const {
     getEnrollments,
@@ -84,7 +89,6 @@ router.get("/:id", getEnrollmentById);
  *       201:
  *         description: Enrollment created successfully
  */
-router.post("/", createEnrollment);
 router.post(
     "/",
     authenticateToken,
@@ -202,7 +206,6 @@ router.get(
  *       404:
  *         description: Enrollment not found
  */
-router.put("/:id", updateEnrollment);
 router.put(
     "/:id",
     authenticateToken,
@@ -232,11 +235,10 @@ router.put(
  *       404:
  *         description: Enrollment not found
  */
-router.delete("/:id", deleteEnrollment);
-router.post("/sessions", createSession);
-router.get("/sessions/:id", getSessionById);
-router.put("/sessions/:id", updateSession);
-router.delete("/sessions/:id", deleteSession);
+router.post("/sessions", authenticateToken, authorizeRoles("Admin"), createSession);
+router.get("/sessions/:id", authenticateToken, authorizeRoles("Admin"), getSessionById);
+router.put("/sessions/:id", authenticateToken, authorizeRoles("Admin"), updateSession);
+router.delete("/sessions/:id", authenticateToken, authorizeRoles("Admin"), deleteSession);
 router.delete(
     "/:id",
     authenticateToken,
