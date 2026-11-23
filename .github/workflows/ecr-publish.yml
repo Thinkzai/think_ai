@@ -1,6 +1,9 @@
 name: Thinkz AI ECR Publish & Deploy
 
 on:
+  push:
+    tags:
+      - 'v*.*.*'
   workflow_run:
     workflows: ["Thinkz AI CI"]
     types:
@@ -26,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       (github.event.workflow_run.event == 'push' &&
        github.event.workflow_run.conclusion == 'success')
 
