@@ -1,0 +1,74 @@
+name: Thinkz AI Frontend Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thinkz-prod-frontend-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy-frontend:
+    name: Build & Deploy Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Build production frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: https://40.192.27.248/api
+          VITE_COURSE_API_BASE_URL: https://40.192.27.248/api
+          VITE_FORUM_API_URL: https://40.192.27.248/api
+          VITE_FORUM_WS_URL: https://40.192.27.248
+          VITE_JITSI_DOMAIN: live.thinkzai.com
+        run: npm run build
+
+      - name: Package frontend dist
+        run: |
+          tar -czf /tmp/frontend-dist.tar.gz -C frontend/dist .
+          ls -lh /tmp/frontend-dist.tar.gz
+
+      - name: Deploy frontend to AWS EC2 (Zero-Downtime)
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' "$EC2_SSH_KEY" | tr -d '[:space:]' | base64 -d > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          REL="${SHORT_SHA:0:7}-${GITHUB_RUN_ID}"
+          scp -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
+            /tmp/frontend-dist.tar.gz \
+            "${EC2_USER}@${EC2_HOST}:/tmp/frontend-dist-${REL}.tar.gz"
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
+            "${EC2_USER}@${EC2_HOST}" \
+            "/home/ubuntu/scripts/deploy-frontend.sh '/tmp/frontend-dist-${REL}.tar.gz' '${REL}'"
