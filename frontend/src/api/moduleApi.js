@@ -17,3 +17,10 @@ export const updateModule = (id, data) =>
 
 export const deleteModule = (id) =>
   api.delete(`/modules/${id}`);
+export const getLearnerModulesByCourseId = async (courseId) => {
+  const response = await api.get(`/lms/courses/${courseId}/player`);
+  return {
+    ...response,
+    data: { data: response.data.data.course.modules },
+  };
+};

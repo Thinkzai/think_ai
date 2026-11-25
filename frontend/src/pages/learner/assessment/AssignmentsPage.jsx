@@ -12,13 +12,16 @@ import {
   ChevronUp
 } from "lucide-react";
 
-import { getEnrollments } from "../../../api/enrollmentApi";
+import { getMyEnrollments } from "../../../api/enrollmentApi";
 import api from "../../../api/axios";
+import { getLearnerModulesByCourseId } from "../../../api/moduleApi";
 
 export default function AssignmentsPage() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   
@@ -34,7 +37,8 @@ export default function AssignmentsPage() {
     (async () => {
       try {
         setLoading(true);
-        const res = await getEnrollments();
+        setError("");
+        const res = await getMyEnrollments();
         const d = res?.data;
         const list = Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
 
@@ -61,13 +65,15 @@ export default function AssignmentsPage() {
           }
         }
       } catch (err) {
-        console.error("Failed to load student enrolled courses for assignments", err);
+        if (isMounted) {
+          setError(err.response?.data?.message || "Your enrolled courses could not load. Please try again.");
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
     })();
     return () => { isMounted = false; };
-  }, []);
+  }, [retryCount]);
 
   useEffect(() => {
     if (!selectedCourse) return;
@@ -77,7 +83,7 @@ export default function AssignmentsPage() {
       try {
         setLoadingModules(true);
         // Fetch modules for the selected course
-        const modRes = await api.get(`/modules/course/${selectedCourse.id}`);
+        const modRes = await getLearnerModulesByCourseId(selectedCourse.id);
         const mods = modRes?.data?.data || modRes?.data || [];
 
         if (isMounted) {
@@ -117,6 +123,18 @@ export default function AssignmentsPage() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center text-slate-400 font-mono text-xs">
         <Loader2 className="animate-spin mr-2 text-emerald-500" size={16} /> Loading your enrolled courses &amp; assignments...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="p-6 space-y-4">
+        <h1 className="text-xl font-semibold">Unable to load your courses</h1>
+        <p>{error}</p>
+        <button type="button" className="px-4 py-2 rounded-lg bg-purple-600 text-white" onClick={() => setRetryCount((count) => count + 1)}>
+          Try again
+        </button>
       </div>
     );
   }
