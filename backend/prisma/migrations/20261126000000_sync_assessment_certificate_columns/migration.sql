@@ -115,3 +115,18 @@ CREATE TABLE IF NOT EXISTS "LmsReportDelivery" (
   CONSTRAINT "LmsReportDelivery_pkey" PRIMARY KEY ("id")
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "LmsReportDelivery_periodKey_key" ON "LmsReportDelivery"("periodKey");
+
+-- Sync remaining 6 missing columns on Module, Lesson, SubmissionAnswer, and LiveSession (idempotent)
+ALTER TABLE "Module"
+  ADD COLUMN IF NOT EXISTS "order" INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE "Lesson"
+  ADD COLUMN IF NOT EXISTS "durationSeconds" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "completionThreshold" DOUBLE PRECISION NOT NULL DEFAULT 90,
+  ADD COLUMN IF NOT EXISTS "videoBytes" INTEGER;
+
+ALTER TABLE "SubmissionAnswer"
+  ADD COLUMN IF NOT EXISTS "language" TEXT;
+
+ALTER TABLE "LiveSession"
+  ADD COLUMN IF NOT EXISTS "scheduledAt" TIMESTAMP(3);
