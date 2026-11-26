@@ -1,24 +1,5 @@
 export type FailureReasonKey = 'declined' | 'insufficient_funds' | 'expired' | 'network' | 'unknown';
 
-/** Maps the payment gateway's failure codes onto the screen's reason keys. */
-export function failureReasonFromCode(
-  code: string | null | undefined
-): FailureReasonKey {
-  switch (code) {
-    case 'card_declined':
-      return 'declined';
-    case 'insufficient_funds':
-      return 'insufficient_funds';
-    case 'expired_card':
-      return 'expired';
-    case 'processing_error':
-    case 'timeout':
-      return 'network';
-    default:
-      return 'unknown';
-  }
-}
-
 export const failureMessages: Record<FailureReasonKey, { title: string; body: string }> = {
   declined: { title: 'Payment Declined', body: 'Your bank declined this transaction. Please try a different payment method.' },
   insufficient_funds: { title: 'Insufficient Funds', body: 'There are not enough funds to complete this payment.' },
@@ -26,3 +7,23 @@ export const failureMessages: Record<FailureReasonKey, { title: string; body: st
   network: { title: 'Network Error', body: 'We could not reach the payment provider. Check your connection and retry.' },
   unknown: { title: 'Payment Failed', body: 'Something went wrong while processing your payment.' },
 };
+
+export function failureReasonFromCode(code?: string | null): FailureReasonKey {
+  switch ((code ?? '').toUpperCase()) {
+    case 'CARD_DECLINED':
+    case 'PAYMENT_DECLINED':
+    case 'DECLINED':
+      return 'declined';
+    case 'INSUFFICIENT_FUNDS':
+      return 'insufficient_funds';
+    case 'EXPIRED_CARD':
+    case 'SESSION_EXPIRED':
+    case 'EXPIRED':
+      return 'expired';
+    case 'NETWORK_ERROR':
+    case 'TIMEOUT':
+      return 'network';
+    default:
+      return 'unknown';
+  }
+}
