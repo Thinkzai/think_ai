@@ -523,19 +523,31 @@ const submitAssessment = async (
 
 
     /*
-     * Calculate percentage.
+     * Calculate effective totalMarks from actual questions and clamp percentage to 0..100.
      */
-    const percentage =
-        Number(
-            (
-                assessment.totalMarks > 0
-                    ? (
-                        score /
-                        assessment.totalMarks
-                    ) * 100
-                    : 0
-            ).toFixed(2)
+    const questionMarksTotal =
+        assessment.questions.reduce(
+            (total, q) => total + Math.max(0, Number(q.marks || 0)),
+            0
         );
+    const effectiveTotalMarks =
+        questionMarksTotal > 0
+            ? questionMarksTotal
+            : Number(assessment.totalMarks || 0);
+    const boundedScore =
+        effectiveTotalMarks > 0
+            ? Math.min(effectiveTotalMarks, Math.max(0, score))
+            : Math.max(0, score);
+    const percentage =
+        effectiveTotalMarks > 0
+            ? Math.min(
+                100,
+                Math.max(
+                    0,
+                    Number(((boundedScore / effectiveTotalMarks) * 100).toFixed(2))
+                )
+            )
+            : 0;
 
 
     /*
@@ -556,10 +568,10 @@ const submitAssessment = async (
                             enrollmentId:
                                 enrollmentId,
 
-                            score,
+                            score: boundedScore,
 
                             totalMarks:
-                                assessment.totalMarks,
+                                effectiveTotalMarks,
 
                             percentage,
 
@@ -1392,14 +1404,22 @@ const recalculateCodingQuestionScore = async (submissionId, questionId) => {
         const answers = await tx.submissionAnswer.findMany({ where: { submissionId: parsedSubmissionId } });
         const allCompleted = submission.assessment.questions.length > 0 && submission.assessment.questions.every(q =>
             answers.some(a => a.questionId === q.id && a.isCorrect !== null && a.isCorrect !== undefined));
-        const score = submission.assessment.questions.reduce((total, q) => {
+        const questionMarksTotal = submission.assessment.questions.reduce(
+            (total, q) => total + Math.max(0, Number(q.marks || 0)),
+            0
+        );
+        const effectiveTotalMarks = questionMarksTotal > 0 ? questionMarksTotal : Number(submission.totalMarks || 0);
+        const rawScore = submission.assessment.questions.reduce((total, q) => {
             const answer = answers.find(a => a.questionId === q.id);
             return total + Math.min(Number(q.marks), Math.max(0, Number(answer?.marksObtained || 0)));
         }, 0);
-        const percentage = submission.totalMarks > 0 ? Number(((score / submission.totalMarks) * 100).toFixed(2)) : 0;
+        const score = effectiveTotalMarks > 0 ? Math.min(effectiveTotalMarks, Math.max(0, rawScore)) : Math.max(0, rawScore);
+        const percentage = effectiveTotalMarks > 0
+            ? Math.min(100, Math.max(0, Number(((score / effectiveTotalMarks) * 100).toFixed(2))))
+            : 0;
         const updated = await tx.assessmentSubmission.update({
             where: { id: parsedSubmissionId },
-            data: { score, percentage, status: allCompleted ? "COMPLETED" : "IN_PROGRESS",
+            data: { score, totalMarks: effectiveTotalMarks, percentage, status: allCompleted ? "COMPLETED" : "IN_PROGRESS",
                 ...(allCompleted ? { submittedAt: new Date() } : {}) },
         });
         return { submissionId: updated.id, questionId: parsedQuestionId, marksObtained,
