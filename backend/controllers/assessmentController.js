@@ -352,14 +352,90 @@ const getAssessmentSubmissionResult = async (
     }
 };
 
+// These routes share the service layer's validation and response envelope.
+function assessmentHandler(operation, { status = 200, message } = {}) {
+    return async (req, res) => {
+        try {
+            const data = await operation(req);
+            return res.status(status).json({ success: true, ...(message ? { message } : {}), data });
+        } catch (error) {
+            const detail = error?.message || "Assessment request failed";
+            const notFound = /not found$/i.test(detail);
+            const invalid = isValidationError(detail) || detail.includes("is not active") ||
+                detail === "This assessment does not belong to the enrolled course";
+            return res.status(notFound ? 404 : invalid ? 400 : 500).json({
+                success: false,
+                message: notFound || invalid ? detail : "Assessment request failed"
+            });
+        }
+    };
+}
+
+const getAllAssessments = assessmentHandler(req => service.getAllAssessments(req.query.moduleId));
+const updateAssessment = assessmentHandler(req => service.updateAssessment(req.params.id, req.body));
+const deleteAssessment = assessmentHandler(req => service.deleteAssessment(req.params.id), {
+    message: "Assessment deleted successfully"
+});
+const getEnrollmentAssessmentStatus = assessmentHandler(req => service.getEnrollmentAssessmentStatus(req.params.enrollmentId));
+const getAssessmentSubmissions = assessmentHandler(req => service.getSubmissionsByAssessmentId(req.params.id));
+const startAssessment = assessmentHandler(async req => {
+    const submission = await service.startAssessment(req.params.id, req.body.enrollmentId);
+    return {
+        submissionId: submission.id,
+        assessmentId: submission.assessmentId,
+        enrollmentId: submission.enrollmentId,
+        status: submission.status,
+        totalMarks: submission.totalMarks,
+        score: submission.score,
+        percentage: submission.percentage
+    };
+}, { message: "Assessment started successfully" });
+
+const createCodingQuestion = assessmentHandler(req => service.createCodingQuestion(req.body), {
+    status: 201, message: "Coding question created successfully"
+});
+const getCodingQuestions = assessmentHandler(req => service.getCodingQuestions(req.params.assessmentId));
+const getCodingQuestionById = assessmentHandler(req => service.getCodingQuestionById(req.params.questionId));
+const updateCodingQuestion = assessmentHandler(req => service.updateCodingQuestion(req.params.questionId, req.body), {
+    message: "Coding question updated successfully"
+});
+const deleteCodingQuestion = assessmentHandler(req => service.deleteCodingQuestion(req.params.questionId), {
+    message: "Coding question deleted successfully"
+});
+const createCodingTestCase = assessmentHandler(req => service.createCodingTestCase(req.params.questionId, req.body), {
+    status: 201, message: "Coding test case created successfully"
+});
+const getCodingTestCases = assessmentHandler(req => service.getCodingTestCases(req.params.questionId));
+const updateCodingTestCase = assessmentHandler(req => service.updateCodingTestCase(req.params.testCaseId, req.body), {
+    message: "Coding test case updated successfully"
+});
+const deleteCodingTestCase = assessmentHandler(req => service.deleteCodingTestCase(req.params.testCaseId), {
+    message: "Coding test case deleted successfully"
+});
+
 module.exports = {
 
     createAssessment,
+    getAllAssessments,
+    updateAssessment,
+    deleteAssessment,
 
     getAssessmentById,
+    getEnrollmentAssessmentStatus,
+    startAssessment,
 
     submitAssessment,
 
     getAssessmentAnalytics,
-    getAssessmentSubmissionResult
+    getAssessmentSubmissionResult,
+    getAssessmentSubmissions,
+    createCodingQuestion,
+    getCodingQuestions,
+    getCodingQuestionById,
+    updateCodingQuestion,
+    deleteCodingQuestion,
+    createCodingTestCase,
+    getCodingTestCases,
+    updateCodingTestCase,
+    deleteCodingTestCase
 };

@@ -11,6 +11,7 @@ const controllers = {
   lessonController: ["getAllLessons", "getLessonById", "getLessonsByModuleId", "createLesson", "updateLesson", "deleteLesson"],
   batchController: ["getBatches", "getBatchById", "createBatch", "updateBatch", "deleteBatch", "getBatchEnrollments", "autoAllocateStudent"],
   enrollmentController: ["getEnrollments", "getEnrollmentById", "createEnrollment", "updateEnrollment", "unlockCourseAccess", "deleteEnrollment"],
+  sessionController: ["createSession", "getSessionById", "updateSession", "deleteSession"],
   certificateTemplateController: ["getActiveCertificateTemplate", "getAllCertificateTemplates", "getCertificateTemplateById", "createCertificateTemplate", "updateCertificateTemplate", "deleteCertificateTemplate"],
   assessmentController: ["createCodingQuestion", "getCodingQuestions", "getCodingQuestionById", "updateCodingQuestion", "deleteCodingQuestion", "createCodingTestCase", "getCodingTestCases", "updateCodingTestCase", "deleteCodingTestCase"],
 };
@@ -42,6 +43,9 @@ const protectedRoutes = [
   ["patch", "/api/enrollments/1/course-access", null, { courseAccess: true }],
   ["put", "/api/enrollments/1", "updateEnrollment", { studentName: "Updated learner" }],
   ["delete", "/api/enrollments/1", "deleteEnrollment"],
+  ["post", "/api/enrollments/sessions", "createSession"],
+  ["put", "/api/enrollments/sessions/1", "updateSession"],
+  ["delete", "/api/enrollments/sessions/1", "deleteSession"],
   ["post", "/api/certificate-templates", "createCertificateTemplate", { name: "Default template" }],
   ["put", "/api/certificate-templates/1", "updateCertificateTemplate", { title: "Certificate of completion" }],
   ["delete", "/api/certificate-templates/1", "deleteCertificateTemplate"],

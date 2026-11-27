@@ -101,7 +101,7 @@ router.get("/:id", getCourseById);
  *       201:
  *         description: Course created successfully
  */
-router.post("/", createCourse);
+router.post("/", authenticateToken, authorizeRoles("Admin"), validateCourseCreate, createCourse);
 
 /**
  * @swagger
@@ -148,7 +148,6 @@ router.post("/", createCourse);
  *       200:
  *         description: Course updated successfully
  */
-router.put("/:id", updateCourse);
 router.put(
     "/:id",
     authenticateToken,
@@ -178,7 +177,6 @@ router.put(
  *       404:
  *         description: Course not found
  */
-router.delete("/:id", deleteCourse);
 router.delete(
     "/:id",
     authenticateToken,

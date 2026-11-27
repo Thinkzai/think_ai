@@ -4,6 +4,7 @@ const router = express.Router();
 
 const {
     executeCode,
+    submitCode,
     gradingCallback
 } = require("../controllers/codeExecutionController");
 
@@ -83,8 +84,7 @@ router.post("/practice-run", ...learnerOnly, practiceRun);
  *         description: Judge0 is not configured
  */
 router.post(
-    "/execute",
-    "/run",
+    ["/execute", "/run"],
     ...learnerOnly,
     requireOwnedCodeAttempt({ publicTestCase: true }),
     redactLearnerAnswers,

@@ -1,3 +1,4 @@
+const { broadcastSessionStarted, broadcastSessionEnded } = require("../services/liveSessionNotificationService");
 const NodeCache = require("node-cache");
 const sessionCache = new NodeCache({ stdTTL: 300});
 
@@ -291,6 +292,27 @@ const getJoinToken = async (req, res) => {
         });
     }
 };
+// POST /api/v1/sessions/broadcast accepts { sessionId, event }.
+function broadcastSessionEvent(req, res) {
+    const { sessionId, event } = req.body || {};
+    if ((typeof sessionId !== "string" && !Number.isSafeInteger(sessionId)) ||
+        !String(sessionId).trim() || !["session:started", "session:ended"].includes(event)) {
+        return res.status(400).json({ error: "Provide a sessionId and a session:started or session:ended event." });
+    }
+    const session = sessions.find(item => String(item.id) === String(sessionId));
+    if (!session) {
+        return res.status(404).json({ error: "Session not found." });
+    }
+    const io = req.app.get("io");
+    if (!io?.sockets?.sockets) {
+        return res.status(503).json({ success: false, code: "LIVE_BROADCAST_UNAVAILABLE",
+            message: "The live notification server is unavailable." });
+    }
+    const notify = event === "session:started" ? broadcastSessionStarted : broadcastSessionEnded;
+    const recipients = notify(io, session);
+    return res.status(200).json({ success: true, notifiedUsers: new Set(recipients).size });
+}
+
 // Export all the middleware handlers globally
 module.exports = {
     createSession,
@@ -300,5 +322,6 @@ module.exports = {
     getSessionById,
     updateSession,
     deleteSession,
-    saveRecordingCallback
+    saveRecordingCallback,
+    broadcastSessionEvent
 };
