@@ -3,6 +3,7 @@ import {
   getModules,
   getModuleById,
   getModulesByCourseId,
+  getLearnerModulesByCourseId,
 } from '../../api/moduleApi';
 
 const initialState = {
@@ -14,9 +15,13 @@ const initialState = {
 
 export const fetchModulesByCourseId = createAsyncThunk(
   'modules/fetchModulesByCourseId',
-  async (courseId, { rejectWithValue }) => {
+  async (courseId, { rejectWithValue, getState }) => {
     try {
-      const response = await getModulesByCourseId(courseId);
+      const role = getState().auth.user?.role?.toLowerCase();
+      const loadModules = ["learner", "student", "user"].includes(role)
+        ? getLearnerModulesByCourseId
+        : getModulesByCourseId;
+      const response = await loadModules(courseId);
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to load modules');

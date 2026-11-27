@@ -1,26 +1,6 @@
-import axios from "axios"
+import api from "../api/axios";
 
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const apiBaseUrl = configuredApiBaseUrl?.startsWith('http')
-  ? configuredApiBaseUrl
-  : 'http://localhost:5000/api';
-
-const apiClient = axios.create({
-  // A relative /api setting works only when a proxy is configured. The local
-  // demo must call the backend directly so portal data loads on any Vite port.
-  baseURL: apiBaseUrl,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+const apiClient = api;
 
 apiClient.interceptors.response.use(
   (response) => response,

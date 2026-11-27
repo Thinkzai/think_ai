@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getEnrollments } from '../../api/enrollmentApi';
+import { getMyEnrollments } from '../../api/enrollmentApi';
 
 const initialState = {
   myEnrollments: [],   
@@ -10,16 +10,9 @@ const initialState = {
 export const fetchMyEnrollments = createAsyncThunk(
   'enrollments/fetchMine',
   async (studentEmail, { rejectWithValue }) => {
-    if (!studentEmail) {
-      return rejectWithValue('No logged-in user email available.');
-    }
     try {
-      const response = await getEnrollments();
-      const all = response.data?.data || [];
-      const mine = all.filter(
-        (e) => e.studentEmail?.toLowerCase() === studentEmail.toLowerCase()
-      );
-      return mine;
+      const response = await getMyEnrollments();
+      return response.data?.data || [];
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to load enrollments');
     }

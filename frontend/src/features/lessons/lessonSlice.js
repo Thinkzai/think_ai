@@ -13,8 +13,15 @@ const initialState = {
 
 export const fetchLessonsByModuleId = createAsyncThunk(
   'lessons/fetchLessonsByModuleId',
-  async (moduleId, { rejectWithValue }) => {
+  async (moduleId, { rejectWithValue, getState }) => {
     try {
+      const state = getState();
+      const role = state.auth.user?.role?.toLowerCase();
+      if (["learner", "student", "user"].includes(role)) {
+        const module = state.modules.items.find((item) => String(item.id) === String(moduleId));
+        if (!module) return rejectWithValue("Load the course before its lessons.");
+        return { moduleId, lessons: module.lessons || [] };
+      }
       const response = await getLessonsByModuleId(moduleId);
       const data = response.data?.data;
       const lessons = Array.isArray(data) ? data : (Array.isArray(data?.lessons) ? data.lessons : []);

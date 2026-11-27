@@ -1,5 +1,7 @@
 import api from "./axios";
 
+export const getMyEnrollments = () => api.get("/lms/enrollments");
+
 export const getEnrollments = () => api.get("/enrollments");
 
 export const getEnrollmentById = (id) =>

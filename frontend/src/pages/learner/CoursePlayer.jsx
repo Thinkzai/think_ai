@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { selectUser } from '../../features/auth/authSlice';
-import { fetchMyEnrollments, selectMyEnrollments } from '../../features/enrollments/enrollmentSlice';
-import { fetchModulesByCourseId, selectModules, selectModulesLoading } from '../../features/modules/moduleSlice';
+import { fetchMyEnrollments, selectMyEnrollments, selectEnrollmentLoading, selectEnrollmentError } from '../../features/enrollments/enrollmentSlice';
+import { fetchModulesByCourseId, selectModules, selectModulesLoading, selectModulesError } from '../../features/modules/moduleSlice';
 import { fetchLessonsByModuleId, selectLessonsByModuleId } from '../../features/lessons/lessonSlice';
 import {
   fetchProgressByEnrollment,
@@ -77,6 +77,9 @@ export default function CoursePlayer() {
 
   const user = useSelector(selectUser);
   const enrollments = useSelector(selectMyEnrollments);
+  const enrollmentLoading = useSelector(selectEnrollmentLoading);
+  const enrollmentError = useSelector(selectEnrollmentError);
+  const modulesError = useSelector(selectModulesError);
   const modules = useSelector(selectModules);
   const modulesLoading = useSelector(selectModulesLoading);
 
@@ -87,10 +90,10 @@ export default function CoursePlayer() {
   const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
-    if (enrollments.length === 0 && user?.email) {
+    if (user?.email) {
       dispatch(fetchMyEnrollments(user.email));
     }
-  }, [dispatch, enrollments.length, user?.email]);
+  }, [dispatch, user?.email]);
 
   const enrollment = useMemo(() => {
     return enrollments.find((e) => {
@@ -202,11 +205,14 @@ export default function CoursePlayer() {
   if (!user?.email) {
     return <div className="p-6 text-sm text-slate-400">Loading your account…</div>;
   }
-  if (enrollments.length > 0 && !enrollment) {
-    return <div className="p-6 text-sm text-rose-500">You're not enrolled in this course.</div>;
+  if (enrollmentLoading || modulesLoading) {
+    return <div className="p-6 text-sm text-slate-400">Loading course...</div>;
   }
-  if (!enrollment || modulesLoading) {
-    return <div className="p-6 text-sm text-slate-400">Loading course…</div>;
+  if (enrollmentError || modulesError) {
+    return <div role="alert" className="p-6 text-sm text-rose-500">{enrollmentError || modulesError}</div>;
+  }
+  if (!enrollment) {
+    return <div className="p-6 text-sm text-rose-500">Course enrollment unavailable.</div>;
   }
 
   return (
